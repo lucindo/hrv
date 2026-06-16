@@ -12,9 +12,11 @@ import {
   formatRatio,
   formatTrimmed,
   getNextDurationOption,
+  snapSessionSettingsToPresets,
   type DurationOption,
   type SessionSettings,
 } from '../domain'
+import { useSnapToPresets } from '../hooks/useSnapToPresets'
 import { SettingsFormShell } from './SettingsFormShell'
 import { SettingsSegmentedRow } from './SettingsSegmentedRow'
 import { SettingsSlider } from './SettingsSlider'
@@ -42,6 +44,8 @@ export function ResonantSettingsForm({
   const formatBpmSlider = (value: number): string => `${formatTrimmed(value)} ${strings.bpmUnit}`
   const formatDuration = (value: DurationOption): string =>
     value === 'open-ended' ? strings.openEndedLabel : `${String(value)} ${strings.minutesUnit}`
+
+  useSnapToPresets(advanced, settings, snapSessionSettingsToPresets, onChange)
 
   const updateSettings = (nextSettings: Partial<SessionSettings>): void => {
     onChange({ ...settings, ...nextSettings })

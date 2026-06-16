@@ -1,3 +1,5 @@
+import { nearestOption } from './settings'
+
 export type OmLength = 'fast' | 'medium' | 'slow'
 
 export const OM_LENGTH_OPTIONS = ['fast', 'medium', 'slow'] as const satisfies readonly OmLength[]
@@ -51,6 +53,14 @@ export function isValidFrontCount(v: unknown): v is number {
 
 export function isValidOmSeconds(v: unknown): v is number {
   return typeof v === 'number' && Number.isFinite(v) && v >= OM_SECONDS_MIN && v <= OM_SECONDS_MAX
+}
+
+// Snaps a free-set omSeconds back to the nearest named preset (fast/medium/slow).
+// Returns the SAME reference when already on a preset.
+export function snapNaviKriyaSettingsToPresets(s: NaviKriyaSettings): NaviKriyaSettings {
+  const presets = OM_LENGTH_OPTIONS.map((l) => NK_OM_SECONDS[l])
+  const omSeconds = nearestOption(presets, s.omSeconds)
+  return omSeconds === s.omSeconds ? s : { ...s, omSeconds }
 }
 
 // isValidRounds: checks typeof number, Number.isFinite, Number.isInteger, v >= 1

@@ -4,6 +4,9 @@ import {
   isValidBpm,
   isValidInhaleShare,
   isValidDuration,
+  nearestOption,
+  snapSessionSettingsToPresets,
+  snapStretchSettingsToPresets,
   isValidTheme,
   isValidTimbre,
   isValidCue,
@@ -396,5 +399,50 @@ describe('validateStretchSettings (D-01, D-02, STRETCH-03)', () => {
     expect(() => validateStretchSettings(moreExhale)).not.toThrow()
     const moreInhale: StretchSettings = { ...validStretch, inhaleShare: 20, targetInhaleShare: 50 }
     expect(() => validateStretchSettings(moreInhale)).not.toThrow()
+  })
+})
+
+describe('nearestOption', () => {
+  it('returns the closest option, breaking ties toward the higher option', () => {
+    expect(nearestOption([1, 2, 3], 2.4)).toBe(2)
+    expect(nearestOption([50, 40, 30, 20], 35)).toBe(40) // tie 35 → higher
+    expect(nearestOption([50, 40, 30, 20], 37)).toBe(40)
+  })
+
+  it('returns the value unchanged for an empty option list', () => {
+    expect(nearestOption([], 3.35)).toBe(3.35)
+  })
+})
+
+describe('snapSessionSettingsToPresets', () => {
+  it('snaps off-grid bpm and inhaleShare to nearest presets', () => {
+    const snapped = snapSessionSettingsToPresets({ bpm: 3.35, inhaleShare: 37, durationMinutes: 10 })
+    expect(snapped).toEqual({ bpm: 3.5, inhaleShare: 40, durationMinutes: 10 })
+  })
+
+  it('returns the same reference when already on-grid', () => {
+    const onGrid: SessionSettings = { bpm: 5.5, inhaleShare: 40, durationMinutes: 10 }
+    expect(snapSessionSettingsToPresets(onGrid)).toBe(onGrid)
+  })
+})
+
+describe('snapStretchSettingsToPresets', () => {
+  it('snaps free values to presets while keeping targetBpm strictly below initialBpm', () => {
+    const snapped = snapStretchSettingsToPresets({
+      ...DEFAULT_STRETCH_SETTINGS,
+      initialBpm: 5.47,
+      targetBpm: 4.55,
+      inhaleShare: 37,
+      targetInhaleShare: 22,
+    })
+    expect(snapped.initialBpm).toBe(5.5)
+    expect(snapped.targetBpm).toBe(4.5)
+    expect(snapped.targetBpm).toBeLessThan(snapped.initialBpm)
+    expect(snapped.inhaleShare).toBe(40)
+    expect(snapped.targetInhaleShare).toBe(20)
+  })
+
+  it('returns the same reference when already on-grid', () => {
+    expect(snapStretchSettingsToPresets(DEFAULT_STRETCH_SETTINGS)).toBe(DEFAULT_STRETCH_SETTINGS)
   })
 })

@@ -4,6 +4,7 @@ import {
   isValidFrontCount,
   isValidOmSeconds,
   isValidRounds,
+  snapNaviKriyaSettingsToPresets,
   DEFAULT_NK_SETTINGS,
   NK_OM_SECONDS,
 } from './naviKriyaSettings'
@@ -83,6 +84,18 @@ describe('isValidRounds (D-02)', () => {
   it('returns false for wrong types: string "3", null', () => {
     expect(isValidRounds('3')).toBe(false)
     expect(isValidRounds(null)).toBe(false)
+  })
+})
+
+describe('snapNaviKriyaSettingsToPresets', () => {
+  it('snaps an off-grid omSeconds to the nearest named preset', () => {
+    const snapped = snapNaviKriyaSettingsToPresets({ ...DEFAULT_NK_SETTINGS, omSeconds: 1.4 })
+    expect(snapped.omSeconds).toBe(NK_OM_SECONDS.fast)
+  })
+
+  it('returns the same reference when omSeconds is already a preset', () => {
+    const onGrid = { ...DEFAULT_NK_SETTINGS, omSeconds: NK_OM_SECONDS.slow }
+    expect(snapNaviKriyaSettingsToPresets(onGrid)).toBe(onGrid)
   })
 })
 

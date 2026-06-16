@@ -321,4 +321,26 @@ describe('advanced (precise control) mode', () => {
     expect(screen.getByRole('slider', { name: EN.targetBpmLabel })).toHaveAttribute('max', '5.45')
     expect(screen.getByRole('slider', { name: EN.initialBpmLabel })).toHaveAttribute('min', '4.55')
   })
+
+  it('reconciles an off-grid value to the nearest preset when precise control is off (Q6)', () => {
+    const onChange = vi.fn()
+    renderForm({
+      activePractice: 'resonant',
+      advanced: false,
+      settings: { bpm: 3.35, inhaleShare: 37, durationMinutes: 10 },
+      onChange,
+    })
+    expect(onChange).toHaveBeenCalledWith({ bpm: 3.5, inhaleShare: 40, durationMinutes: 10 })
+  })
+
+  it('does not reconcile while precise control is on (free values stay put)', () => {
+    const onChange = vi.fn()
+    renderForm({
+      activePractice: 'resonant',
+      advanced: true,
+      settings: { bpm: 3.35, inhaleShare: 37, durationMinutes: 10 },
+      onChange,
+    })
+    expect(onChange).not.toHaveBeenCalled()
+  })
 })

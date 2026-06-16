@@ -201,6 +201,9 @@ export interface UiStrings {
     readonly bypassSilentMode: {
       readonly label: string
     }
+    readonly preciseControl: {
+      readonly label: string
+    }
   }
   readonly learn: {
     readonly title: string
@@ -404,6 +407,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       breathingEffect: { label: 'Breathing effect' },
       switcherIcons: { label: 'Switcher icons' },
       bypassSilentMode: { label: 'Bypass silent mode' },
+      preciseControl: { label: 'Precise control' },
     },
     learn: {
       title: 'About this practice',
@@ -637,6 +641,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         label: 'Ícones do alternador',
       },
       bypassSilentMode: { label: 'Ignorar modo silencioso' },
+      preciseControl: { label: 'Controle preciso' },
     },
     learn: {
       title: 'Sobre esta prática',

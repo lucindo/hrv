@@ -24,6 +24,7 @@ export function AdvancedPage({ onBack }: AdvancedPageProps): ReactElement {
   const [orbIdle, setOrbIdle] = usePreferenceChoice('orbIdle')
   const [switcherIcon, setSwitcherIcon] = usePreferenceChoice('switcherIcon')
   const [bypassSilentMode, setBypassSilentMode] = usePreferenceChoice('bypassSilentMode')
+  const [advanced, setAdvanced] = usePreferenceChoice('advanced')
   const backButtonRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
@@ -86,6 +87,12 @@ export function AdvancedPage({ onBack }: AdvancedPageProps): ReactElement {
             ariaLabel={strings.bypassSilentMode.label}
             checked={bypassSilentMode}
             onChange={setBypassSilentMode}
+          />
+          <SettingsToggleRow
+            label={strings.preciseControl.label}
+            ariaLabel={strings.preciseControl.label}
+            checked={advanced}
+            onChange={setAdvanced}
           />
         </SectionCard>
       </div>

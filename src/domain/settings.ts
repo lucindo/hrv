@@ -82,6 +82,45 @@ export function formatTrimmed(value: number): string {
   return String(Math.round(value * 100) / 100)
 }
 
+// Returns the option nearest to value (ties → higher option). Snaps a free-set
+// value back onto the discrete grid when precise control is turned off.
+export function nearestOption(options: readonly number[], value: number): number {
+  let best = options[0]
+  if (best === undefined) return value
+  let bestDist = Math.abs(value - best)
+  for (const option of options) {
+    const dist = Math.abs(value - option)
+    if (dist < bestDist || (dist === bestDist && option > best)) {
+      best = option
+      bestDist = dist
+    }
+  }
+  return best
+}
+
+// Snaps a resonant settings' free-set fields to their nearest presets. Returns the
+// SAME reference when already on-grid (lets callers skip a redundant update).
+export function snapSessionSettingsToPresets(s: SessionSettings): SessionSettings {
+  const bpm = nearestOption(BPM_OPTIONS, s.bpm)
+  const inhaleShare = nearestOption(RATIO_INHALE_PRESETS, s.inhaleShare)
+  return bpm === s.bpm && inhaleShare === s.inhaleShare ? s : { ...s, bpm, inhaleShare }
+}
+
+// Snaps a stretch settings' free-set fields to presets, preserving targetBpm <
+// initialBpm (targetBpm snaps within the options strictly below the snapped initial).
+export function snapStretchSettingsToPresets(s: StretchSettings): StretchSettings {
+  const initialBpm = nearestOption(STRETCH_INITIAL_BPM_OPTIONS, s.initialBpm)
+  const targetBpm = nearestOption(getStretchTargetBpmOptions(initialBpm), s.targetBpm)
+  const inhaleShare = nearestOption(RATIO_INHALE_PRESETS, s.inhaleShare)
+  const targetInhaleShare = nearestOption(RATIO_INHALE_PRESETS, s.targetInhaleShare)
+  return initialBpm === s.initialBpm
+    && targetBpm === s.targetBpm
+    && inhaleShare === s.inhaleShare
+    && targetInhaleShare === s.targetInhaleShare
+    ? s
+    : { ...s, initialBpm, targetBpm, inhaleShare, targetInhaleShare }
+}
+
 export const DURATION_OPTIONS = [
   5,
   10,

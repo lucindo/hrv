@@ -17,10 +17,12 @@ import {
   formatTrimmed,
   getStretchSettingsWithInitialBpm,
   getStretchTargetBpmOptions,
+  snapStretchSettingsToPresets,
   type CoolDownMinutes,
   type StretchSettings,
   type WarmUpMinutes,
 } from '../domain'
+import { useSnapToPresets } from '../hooks/useSnapToPresets'
 import { SettingsFormShell } from './SettingsFormShell'
 import { SettingsSegmentedRow } from './SettingsSegmentedRow'
 import { SettingsSlider } from './SettingsSlider'
@@ -53,6 +55,8 @@ export function StretchSettingsForm({
   const formatMinutes = (value: number): string => `${String(value)} ${strings.minutesUnit}`
   const formatCoolDown = (value: CoolDownMinutes): string =>
     value === 'open-ended' ? strings.holdOpenEndedLabel : `${String(value)} ${strings.minutesUnit}`
+
+  useSnapToPresets(advanced, settings, snapStretchSettingsToPresets, onChange)
 
   const updateStretchSettings = (next: Partial<StretchSettings>): void => {
     onChange({ ...settings, ...next })

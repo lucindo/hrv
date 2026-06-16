@@ -10,9 +10,11 @@ import {
   OM_SECONDS_MIN,
   estimateNaviKriyaDurationMinutes,
   formatTrimmed,
+  snapNaviKriyaSettingsToPresets,
   type NaviKriyaSettings,
   type OmLength,
 } from '../domain'
+import { useSnapToPresets } from '../hooks/useSnapToPresets'
 import { SettingsFormShell } from './SettingsFormShell'
 import { SettingsSegmentedRow } from './SettingsSegmentedRow'
 import { SettingsSlider } from './SettingsSlider'
@@ -42,6 +44,8 @@ export function NaviKriyaSettingsForm({
         ? nkControlsStrings.omLengthSlow
         : nkControlsStrings.omLengthMedium
   const formatOmSeconds = (value: number): string => `${formatTrimmed(value)} s`
+
+  useSnapToPresets(advanced, settings, snapNaviKriyaSettingsToPresets, onChange)
 
   const updateNkSettings = (next: Partial<NaviKriyaSettings>): void => {
     onChange({ ...settings, ...next })
