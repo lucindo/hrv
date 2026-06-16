@@ -1,7 +1,7 @@
 import type { SetupCardItem } from '../components/SetupCard'
 import type { UiStrings } from '../content/strings'
 import type { OmLength } from '../domain'
-import { NK_OM_SECONDS, OM_LENGTH_OPTIONS, formatRatio } from '../domain'
+import { NK_OM_SECONDS, OM_LENGTH_OPTIONS, formatRatio, formatTrimmed } from '../domain'
 import type { AppPracticeSettingsViewModel } from './appViewModel'
 
 export interface BuildSetupCardSummaryArgs {
@@ -33,7 +33,7 @@ export function buildSetupCardSummary({
     if (settings.isRunning || settings.isComplete) return null
     const s = settings.settings
     return [
-      { id: 'bpm', label: f.bpmLabel, value: `${String(s.bpm)} ${f.bpmUnit}` },
+      { id: 'bpm', label: f.bpmLabel, value: `${formatTrimmed(s.bpm)} ${f.bpmUnit}` },
       { id: 'ratio', label: f.ratioLabel, value: formatRatio(s.inhaleShare) },
       {
         id: 'duration',
@@ -58,8 +58,8 @@ export function buildSetupCardSummary({
         ? f.openEndedLabel
         : `${String(s.warmUpMinutes + s.rampDurationMinutes + s.coolDownMinutes)} ${f.minutesUnit}`
     return [
-      { id: 'initialBpm', label: f.initialBpmShortLabel, value: `${String(s.initialBpm)} ${f.bpmUnit}` },
-      { id: 'targetBpm', label: f.targetBpmShortLabel, value: `${String(s.targetBpm)} ${f.bpmUnit}` },
+      { id: 'initialBpm', label: f.initialBpmShortLabel, value: `${formatTrimmed(s.initialBpm)} ${f.bpmUnit}` },
+      { id: 'targetBpm', label: f.targetBpmShortLabel, value: `${formatTrimmed(s.targetBpm)} ${f.bpmUnit}` },
       { id: 'duration', label: f.durationLabel, value: durationValue },
     ]
   }
@@ -77,12 +77,13 @@ export function buildSetupCardSummary({
 }
 
 function formatOmLength(omSeconds: number, nk: UiStrings['practice']['nkControls']): string {
-  // Reverse-map the preset seconds to its named label. Non-preset (advanced
-  // free-set) values fall back to the medium label — relevant once sliders ship.
-  const label = (OM_LENGTH_OPTIONS as readonly OmLength[]).find((k) => NK_OM_SECONDS[k] === omSeconds) ?? 'medium'
+  // Preset seconds reverse-map to their named label; a free (advanced) value that
+  // matches no preset shows its seconds, matching the slider readout.
+  const label = (OM_LENGTH_OPTIONS as readonly OmLength[]).find((k) => NK_OM_SECONDS[k] === omSeconds)
   if (label === 'fast') return nk.omLengthFast
   if (label === 'slow') return nk.omLengthSlow
-  return nk.omLengthMedium
+  if (label === 'medium') return nk.omLengthMedium
+  return `${formatTrimmed(omSeconds)} s`
 }
 
 // Resolves the per-practice display name used for the SetupCard aria-label
