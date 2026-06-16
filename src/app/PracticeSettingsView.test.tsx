@@ -73,6 +73,7 @@ function renderView(vm: AppPracticeSettingsViewModel): { rerender: () => void } 
         <PracticeSettingsView
           settings={vm}
           isSheetOpen={open}
+          advanced={false}
           onOpenSheet={() => { setOpen(true) }}
           onCloseSheet={() => { setOpen(false) }}
         />
@@ -149,6 +150,7 @@ describe('PracticeSettingsView — stretch', () => {
         <PracticeSettingsView
           settings={makeStretchVM({ isRunning: true })}
           isSheetOpen={false}
+          advanced={false}
           onOpenSheet={vi.fn()}
           onCloseSheet={vi.fn()}
         />
@@ -179,6 +181,7 @@ describe('PracticeSettingsView — hidden (navi session active)', () => {
         <PracticeSettingsView
           settings={{ kind: 'hidden' }}
           isSheetOpen={false}
+          advanced={false}
           onOpenSheet={vi.fn()}
           onCloseSheet={vi.fn()}
         />

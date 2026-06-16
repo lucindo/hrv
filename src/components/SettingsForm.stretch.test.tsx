@@ -24,6 +24,7 @@ interface RenderFormOverrides {
   activePractice?: PracticeId
   settings?: SessionSettings
   isRunning?: boolean
+  advanced?: boolean
   onChange?: (settings: SessionSettings) => void
   onExtendDuration?: (durationMinutes: number) => void
   strings?: typeof EN
@@ -35,6 +36,7 @@ interface RenderFormOverrides {
 
 function renderForm(overrides: RenderFormOverrides = {}) {
   const activePractice = overrides.activePractice ?? 'resonant'
+  const advanced = overrides.advanced ?? false
   const onChange = vi.fn()
   const onExtendDuration = vi.fn()
   const onStretchSettingsChange = vi.fn()
@@ -45,6 +47,7 @@ function renderForm(overrides: RenderFormOverrides = {}) {
       <ResonantSettingsForm
         settings={overrides.settings ?? DEFAULT_SETTINGS}
         isRunning={overrides.isRunning ?? false}
+        advanced={advanced}
         onChange={overrides.onChange ?? onChange}
         onExtendDuration={overrides.onExtendDuration ?? onExtendDuration}
         strings={overrides.strings ?? EN}
@@ -54,6 +57,7 @@ function renderForm(overrides: RenderFormOverrides = {}) {
     render(
       <StretchSettingsForm
         isRunning={overrides.isRunning ?? false}
+        advanced={advanced}
         strings={overrides.strings ?? EN}
         settings={overrides.stretchSettings ?? DEFAULT_STRETCH_SETTINGS}
         onChange={overrides.onStretchSettingsChange ?? onStretchSettingsChange}
@@ -64,6 +68,7 @@ function renderForm(overrides: RenderFormOverrides = {}) {
       <NaviKriyaSettingsForm
         strings={overrides.strings ?? EN}
         settings={overrides.nkSettings ?? DEFAULT_NK_SETTINGS}
+        advanced={advanced}
         onChange={overrides.onNKSettingsChange ?? onNKSettingsChange}
         nkControlsStrings={UI_STRINGS.en.practice.nkControls}
       />,
@@ -199,26 +204,26 @@ describe('StretchSettingsForm', () => {
     const user = userEvent.setup()
     const { onStretchSettingsChange } = renderForm({
       activePractice: 'stretch',
-      stretchSettings: { ...DEFAULT_STRETCH_SETTINGS, ratio: '40:60' },
+      stretchSettings: { ...DEFAULT_STRETCH_SETTINGS, inhaleShare: 40 },
     })
     // Ratio is a segmented control (radio buttons) inside the
     // SettingsSegmentedRow fieldset, not a +/- stepper.
     const ratioGroup = screen.getByRole('group', { name: 'Start Ratio' })
     await user.click(within(ratioGroup).getByRole('radio', { name: '50:50' }))
     expect(onStretchSettingsChange).toHaveBeenCalledTimes(1)
-    expect((onStretchSettingsChange.mock.calls[0]?.[0] as StretchSettings).ratio).toBe('50:50')
+    expect((onStretchSettingsChange.mock.calls[0]?.[0] as StretchSettings).inhaleShare).toBe(50)
   })
 
   it('changing target ratio calls onStretchSettingsChange with updated targetRatio', async () => {
     const user = userEvent.setup()
     const { onStretchSettingsChange } = renderForm({
       activePractice: 'stretch',
-      stretchSettings: { ...DEFAULT_STRETCH_SETTINGS, targetRatio: '40:60' },
+      stretchSettings: { ...DEFAULT_STRETCH_SETTINGS, targetInhaleShare: 40 },
     })
     const targetRatioGroup = screen.getByRole('group', { name: 'Target Ratio' })
     await user.click(within(targetRatioGroup).getByRole('radio', { name: '20:80' }))
     expect(onStretchSettingsChange).toHaveBeenCalledTimes(1)
-    expect((onStretchSettingsChange.mock.calls[0]?.[0] as StretchSettings).targetRatio).toBe('20:80')
+    expect((onStretchSettingsChange.mock.calls[0]?.[0] as StretchSettings).targetInhaleShare).toBe(20)
   })
 })
 
@@ -269,5 +274,73 @@ describe('Practice settings forms stay isolated by practice', () => {
     ).toBeInTheDocument()
     // The practice is named in the app header/title, not by an inline heading.
     expect(screen.queryByRole('heading')).not.toBeInTheDocument()
+  })
+})
+
+describe('advanced (precise control) mode', () => {
+  const NK = UI_STRINGS.en.practice.nkControls
+
+  it('resonant: BPM and ratio render as sliders (not stepper/segmented)', () => {
+    renderForm({ activePractice: 'resonant', advanced: true })
+    expect(screen.getByRole('slider', { name: EN.bpmLabel })).toBeInTheDocument()
+    expect(screen.getByRole('slider', { name: EN.ratioLabel })).toBeInTheDocument()
+    // The non-advanced segmented ratio control (radiogroup) is not rendered.
+    expect(screen.queryByRole('radiogroup', { name: EN.ratioLabel })).not.toBeInTheDocument()
+  })
+
+  it('resonant: nudging the BPM slider up reports value + 0.05', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    renderForm({
+      activePractice: 'resonant',
+      advanced: true,
+      settings: { ...DEFAULT_SETTINGS, bpm: 5.5 },
+      onChange,
+    })
+    await user.click(screen.getByRole('button', { name: EN.stepper.increaseLabel(EN.bpmLabel) }))
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ bpm: 5.55 }))
+  })
+
+  it('naviKriya: OM pace becomes a seconds-per-OM slider', () => {
+    renderForm({ activePractice: 'naviKriya', advanced: true })
+    expect(screen.getByRole('slider', { name: NK.omLengthLabel })).toBeInTheDocument()
+    expect(screen.queryByRole('radiogroup', { name: NK.omLengthLabel })).not.toBeInTheDocument()
+  })
+
+  it('stretch: initial/target BPM and both ratios become sliders', () => {
+    renderForm({ activePractice: 'stretch', advanced: true })
+    expect(screen.getByRole('slider', { name: EN.initialBpmLabel })).toBeInTheDocument()
+    expect(screen.getByRole('slider', { name: EN.targetBpmLabel })).toBeInTheDocument()
+    expect(screen.getByRole('slider', { name: EN.startRatioLabel })).toBeInTheDocument()
+    expect(screen.getByRole('slider', { name: EN.targetRatioLabel })).toBeInTheDocument()
+  })
+
+  it('stretch: BPM sliders carry dynamic bounds so initial and target cannot cross', () => {
+    // DEFAULT_STRETCH_SETTINGS: initialBpm 5.5, targetBpm 4.5 → gap 0.05.
+    renderForm({ activePractice: 'stretch', advanced: true })
+    expect(screen.getByRole('slider', { name: EN.targetBpmLabel })).toHaveAttribute('max', '5.45')
+    expect(screen.getByRole('slider', { name: EN.initialBpmLabel })).toHaveAttribute('min', '4.55')
+  })
+
+  it('reconciles an off-grid value to the nearest preset when precise control is off (Q6)', () => {
+    const onChange = vi.fn()
+    renderForm({
+      activePractice: 'resonant',
+      advanced: false,
+      settings: { bpm: 3.35, inhaleShare: 37, durationMinutes: 10 },
+      onChange,
+    })
+    expect(onChange).toHaveBeenCalledWith({ bpm: 3.5, inhaleShare: 40, durationMinutes: 10 })
+  })
+
+  it('does not reconcile while precise control is on (free values stay put)', () => {
+    const onChange = vi.fn()
+    renderForm({
+      activePractice: 'resonant',
+      advanced: true,
+      settings: { bpm: 3.35, inhaleShare: 37, durationMinutes: 10 },
+      onChange,
+    })
+    expect(onChange).not.toHaveBeenCalled()
   })
 })

@@ -10,7 +10,6 @@
 // whole-second computations (`60 / bpm` for cycle length, `* 60` for minutes-to-seconds).
 
 import type { StretchSettings } from './settings'
-import { RATIO_PARTS } from './settings'
 import type { BreathPhase, SessionFrame } from './sessionMath'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -51,7 +50,8 @@ export interface StretchSessionFrame extends SessionFrame {
 
 /**
  * Builds the piecewise-constant segment table for a stretch session.
- * Accepts a single StretchSettings argument; ratio is read from settings.ratio.
+ * Accepts a single StretchSettings argument; the inhale share is read from
+ * settings.inhaleShare (and settings.targetInhaleShare for the ramp).
  *
  * Step 1: warm-up hold at initialBpm for warmUpMinutes — snapped to whole cycles so
  *         the boundary lands on an Out→In transition (BPM never steps mid-breath).
@@ -92,13 +92,13 @@ export function buildStretchSegments(settings: StretchSettings): StretchSegment[
     throw new RangeError('targetBpm must be strictly below initialBpm')
   }
   // The breath ratio is stretched alongside the BPM: warm-up holds the start
-  // ratio, the ramp interpolates the inhale fraction toward the target across the
-  // same numSteps as the BPM walk, and cool-down holds the target ratio. When
-  // targetRatio === ratio the interpolation is a no-op (every segment gets the
-  // start inhale%), so the table is identical to the single-ratio behavior.
-  // exhale% is derived as 100 - inhale% — true for all four RATIO_PARTS labels.
-  const startInhalePct = RATIO_PARTS[settings.ratio].inhale
-  const targetInhalePct = RATIO_PARTS[settings.targetRatio].inhale
+  // inhale share, the ramp interpolates it toward the target across the same
+  // numSteps as the BPM walk, and cool-down holds the target share. When
+  // targetInhaleShare === inhaleShare the interpolation is a no-op (every segment
+  // gets the start inhale%), so the table is identical to the single-ratio behavior.
+  // exhale% is derived as 100 - inhale%.
+  const startInhalePct = settings.inhaleShare
+  const targetInhalePct = settings.targetInhaleShare
   const segments: StretchSegment[] = []
   let cursorSec = 0
   let cumulativeCycles = 0

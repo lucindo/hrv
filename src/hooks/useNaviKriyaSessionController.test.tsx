@@ -5,14 +5,14 @@
 import { act, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { NaviKriyaSettings } from '../domain/naviKriyaSettings'
+import { NK_OM_SECONDS, type NaviKriyaSettings } from '../domain/naviKriyaSettings'
 import type { UseWakeLock } from './useWakeLock'
 import { useNaviKriyaSessionController } from './useNaviKriyaSessionController'
 
 // Stable default settings for smoke tests
 const defaultSettings: NaviKriyaSettings = {
   frontCount: 8,
-  omLength: 'medium',
+  omSeconds: NK_OM_SECONDS.medium,
   rounds: 1,
   perOmCue: false,
 }

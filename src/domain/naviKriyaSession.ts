@@ -1,11 +1,4 @@
-import type { NaviKriyaSettings, OmLength } from './naviKriyaSettings'
-
-// NK_OM_SECONDS values are seconds-shaped.
-export const NK_OM_SECONDS: Record<OmLength, number> = {
-  fast: 1.75,
-  medium: 2.16,
-  slow: 3.0,
-}
+import type { NaviKriyaSettings } from './naviKriyaSettings'
 
 export const NK_LEAD_SEC = 5
 export const NK_LAST_OM_HOLD_MULTIPLIER = 1.5
@@ -35,7 +28,7 @@ export function getNaviKriyaPhaseTarget(
 
 export function estimateNaviKriyaDurationSec(settings: NaviKriyaSettings): number {
   const backCount = getNaviKriyaBackCount(settings.frontCount)
-  const omSec = NK_OM_SECONDS[settings.omLength]
+  const omSec = settings.omSeconds
   const heldOmCount = 2 * (NK_LAST_OM_HOLD_MULTIPLIER - 1)
 
   return (

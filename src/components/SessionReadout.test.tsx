@@ -118,6 +118,11 @@ describe('SessionReadout — secondary content', () => {
     expect(screen.getByText(`5.5 ${EN_FORM_FIXTURE.bpmUnit} · 40:60`)).toBeInTheDocument()
   })
 
+  it('rounds a free-set HRV bpm in the secondary (no raw float)', () => {
+    renderReadout({ frame: sampleFrame, status: 'running', bpm: 1.28862596079109, ratio: '40:60' })
+    expect(screen.getByText(`1.29 ${EN_FORM_FIXTURE.bpmUnit} · 40:60`)).toBeInTheDocument()
+  })
+
   it('stretch frame renders live currentBpm + stage in the secondary', () => {
     renderReadout({ frame: stretchFrame, status: 'running' })
     expect(screen.getByText(`5.5 ${EN_FORM_FIXTURE.bpmUnit} · Stretch`)).toBeInTheDocument()

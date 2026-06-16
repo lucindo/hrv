@@ -53,6 +53,7 @@ export interface UserPrefs {
   orbIdle: OrbIdleBehavior
   switcherIcon: boolean
   bypassSilentMode: boolean  // default true preserves the no-silent-mode bypass users rely on
+  advanced: boolean          // opt-in precise-control mode (free-set velocity/ratio sliders)
 }
 
 export const DEFAULT_PREFS: UserPrefs = {
@@ -65,6 +66,7 @@ export const DEFAULT_PREFS: UserPrefs = {
   orbIdle: ORB_IDLE_FLAG.defaultValue,
   switcherIcon: SWITCHER_ICON_FLAG.defaultValue,
   bypassSilentMode: BYPASS_SILENT_MODE_FLAG.defaultValue, // true — see UserPrefs.bypassSilentMode
+  advanced: false,
 }
 
 export function coerceTheme(raw: unknown): ThemeId {
@@ -149,8 +151,14 @@ export function coerceBypassSilentMode(raw: unknown): boolean {
   return BYPASS_SILENT_MODE_FLAG.defaultValue
 }
 
+// Not flag-backed (no query override), so this is a plain boolean coercer with no
+// legacy-string path — a brand-new field has no hand-edited string envelopes to tolerate.
+export function coerceAdvanced(raw: unknown): boolean {
+  return typeof raw === 'boolean' ? raw : DEFAULT_PREFS.advanced
+}
+
 export function coercePrefs(raw: unknown): UserPrefs {
-  // Prototype-pollution mitigation: we only read nine known keys from the
+  // Prototype-pollution mitigation: we only read ten known keys from the
   // guarded record; `raw` is never spread into a prototype-accessible object.
   const r = asRecord(raw)
   return {
@@ -163,6 +171,7 @@ export function coercePrefs(raw: unknown): UserPrefs {
     orbIdle:          coerceOrbIdle(r.orbIdle),
     switcherIcon:     coerceSwitcherIcon(r.switcherIcon),
     bypassSilentMode: coerceBypassSilentMode(r.bypassSilentMode),
+    advanced:         coerceAdvanced(r.advanced),
   }
 }
 

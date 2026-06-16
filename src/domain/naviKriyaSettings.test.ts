@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest'
 
 import {
   isValidFrontCount,
-  isValidOmLength,
+  isValidOmSeconds,
   isValidRounds,
+  snapNaviKriyaSettingsToPresets,
   DEFAULT_NK_SETTINGS,
+  NK_OM_SECONDS,
 } from './naviKriyaSettings'
 
 describe('isValidFrontCount (D-02, Pitfall 5)', () => {
@@ -37,24 +39,25 @@ describe('isValidFrontCount (D-02, Pitfall 5)', () => {
   })
 })
 
-describe('isValidOmLength (D-02)', () => {
-  it('returns true for all valid OmLength values: "fast", "medium", "slow"', () => {
-    expect(isValidOmLength('fast')).toBe(true)
-    expect(isValidOmLength('medium')).toBe(true)
-    expect(isValidOmLength('slow')).toBe(true)
+describe('isValidOmSeconds (range 1.0–4.0)', () => {
+  it('returns true for the named presets and in-range non-preset values', () => {
+    expect(isValidOmSeconds(NK_OM_SECONDS.fast)).toBe(true)
+    expect(isValidOmSeconds(NK_OM_SECONDS.medium)).toBe(true)
+    expect(isValidOmSeconds(NK_OM_SECONDS.slow)).toBe(true)
+    expect(isValidOmSeconds(1.4)).toBe(true)
   })
 
-  it('returns false for case-variant "FAST"', () => {
-    expect(isValidOmLength('FAST')).toBe(false)
+  it('returns true at the bounds (1.0, 4.0) and false outside them', () => {
+    expect(isValidOmSeconds(1.0)).toBe(true)
+    expect(isValidOmSeconds(4.0)).toBe(true)
+    expect(isValidOmSeconds(0.9)).toBe(false)
+    expect(isValidOmSeconds(4.1)).toBe(false)
   })
 
-  it('returns false for empty string', () => {
-    expect(isValidOmLength('')).toBe(false)
-  })
-
-  it('returns false for null and number 5', () => {
-    expect(isValidOmLength(null)).toBe(false)
-    expect(isValidOmLength(5)).toBe(false)
+  it('returns false for wrong type / NaN', () => {
+    expect(isValidOmSeconds('2')).toBe(false)
+    expect(isValidOmSeconds(null)).toBe(false)
+    expect(isValidOmSeconds(NaN)).toBe(false)
   })
 })
 
@@ -84,11 +87,23 @@ describe('isValidRounds (D-02)', () => {
   })
 })
 
+describe('snapNaviKriyaSettingsToPresets', () => {
+  it('snaps an off-grid omSeconds to the nearest named preset', () => {
+    const snapped = snapNaviKriyaSettingsToPresets({ ...DEFAULT_NK_SETTINGS, omSeconds: 1.4 })
+    expect(snapped.omSeconds).toBe(NK_OM_SECONDS.fast)
+  })
+
+  it('returns the same reference when omSeconds is already a preset', () => {
+    const onGrid = { ...DEFAULT_NK_SETTINGS, omSeconds: NK_OM_SECONDS.slow }
+    expect(snapNaviKriyaSettingsToPresets(onGrid)).toBe(onGrid)
+  })
+})
+
 describe('DEFAULT_NK_SETTINGS (D-02)', () => {
   it('equals the exact D-02 default object', () => {
     expect(DEFAULT_NK_SETTINGS).toEqual({
       frontCount: 100,
-      omLength: 'medium',
+      omSeconds: NK_OM_SECONDS.medium,
       rounds: 3,
       perOmCue: true,
     })

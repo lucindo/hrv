@@ -2,8 +2,11 @@ import { describe, expect, it } from 'vitest'
 
 import {
   isValidBpm,
-  isValidRatio,
+  isValidInhaleShare,
   isValidDuration,
+  nearestOption,
+  snapSessionSettingsToPresets,
+  snapStretchSettingsToPresets,
   isValidTheme,
   isValidTimbre,
   isValidCue,
@@ -23,9 +26,16 @@ import {
 } from './settings'
 import type { SessionSettings, StretchSettings } from './settings'
 
-describe('isValidBpm (HYGIENE-02 D-08)', () => {
-  it('returns true for valid BPM_OPTIONS members (e.g. 5.5)', () => {
+describe('isValidBpm (range 1.0–7.0)', () => {
+  it('returns true for preset members (e.g. 5.5) and the bounds (1, 7)', () => {
     expect(isValidBpm(5.5)).toBe(true)
+    expect(isValidBpm(1)).toBe(true)
+    expect(isValidBpm(7)).toBe(true)
+  })
+
+  it('returns true for in-range non-preset values (advanced free-set, e.g. 3.35)', () => {
+    expect(isValidBpm(3.35)).toBe(true)
+    expect(isValidBpm(6.83)).toBe(true)
   })
 
   it('returns false for out-of-range numbers (0, 7.5)', () => {
@@ -41,18 +51,22 @@ describe('isValidBpm (HYGIENE-02 D-08)', () => {
   })
 })
 
-describe('isValidRatio (HYGIENE-02 D-08)', () => {
-  it('returns true for RATIO_OPTIONS members (e.g. "40:60")', () => {
-    expect(isValidRatio('40:60')).toBe(true)
+describe('isValidInhaleShare (range 10–50, exhale ≥ inhale)', () => {
+  it('returns true for presets and in-range non-preset values', () => {
+    expect(isValidInhaleShare(40)).toBe(true)
+    expect(isValidInhaleShare(35)).toBe(true)
+    expect(isValidInhaleShare(10)).toBe(true)
+    expect(isValidInhaleShare(50)).toBe(true)
   })
 
-  it('returns false for malformed strings ("40-60", "")', () => {
-    expect(isValidRatio('40-60')).toBe(false)
-    expect(isValidRatio('')).toBe(false)
+  it('returns false above the 50 cap (exhale must stay ≥ inhale) and below 10', () => {
+    expect(isValidInhaleShare(60)).toBe(false)
+    expect(isValidInhaleShare(5)).toBe(false)
   })
 
-  it('returns false for wrong type (number 60)', () => {
-    expect(isValidRatio(60)).toBe(false)
+  it('returns false for wrong type / NaN', () => {
+    expect(isValidInhaleShare('40')).toBe(false)
+    expect(isValidInhaleShare(NaN)).toBe(false)
   })
 })
 
@@ -274,46 +288,46 @@ describe('isValidRampDuration (STRETCH-03, D-07)', () => {
 
 // SessionSettings is now standard-only (3 fields)
 describe('SessionSettings and validateSettings (D-01, D-02, STRETCH-03)', () => {
-  it('DEFAULT_SETTINGS has exactly bpm, ratio, durationMinutes — no mode field', () => {
+  it('DEFAULT_SETTINGS has exactly bpm, inhaleShare, durationMinutes — no mode field', () => {
     expect(DEFAULT_SETTINGS).not.toHaveProperty('mode')
     expect(DEFAULT_SETTINGS).toHaveProperty('bpm')
-    expect(DEFAULT_SETTINGS).toHaveProperty('ratio')
+    expect(DEFAULT_SETTINGS).toHaveProperty('inhaleShare')
     expect(DEFAULT_SETTINGS).toHaveProperty('durationMinutes')
   })
 
   it('validateSettings accepts valid standard settings (3 fields only)', () => {
-    const valid: SessionSettings = { bpm: 5.5, ratio: '40:60', durationMinutes: 10 }
+    const valid: SessionSettings = { bpm: 5.5, inhaleShare: 40, durationMinutes: 10 }
     expect(() => validateSettings(valid)).not.toThrow()
     const result = validateSettings(valid)
     expect(result.bpm).toBe(5.5)
-    expect(result.ratio).toBe('40:60')
+    expect(result.inhaleShare).toBe(40)
     expect(result.durationMinutes).toBe(10)
   })
 
   it('validateSettings throws RangeError for invalid bpm', () => {
-    const bad: SessionSettings = { bpm: 999, ratio: '40:60', durationMinutes: 10 }
+    const bad: SessionSettings = { bpm: 999, inhaleShare: 40, durationMinutes: 10 }
     expect(() => validateSettings(bad)).toThrow(RangeError)
   })
 
-  it('validateSettings throws RangeError for invalid ratio', () => {
-    const bad = { bpm: 5.5, ratio: '99:01' as never, durationMinutes: 10 }
+  it('validateSettings throws RangeError for invalid inhaleShare', () => {
+    const bad: SessionSettings = { bpm: 5.5, inhaleShare: 99, durationMinutes: 10 }
     expect(() => validateSettings(bad)).toThrow(RangeError)
   })
 
   it('validateSettings throws RangeError for invalid durationMinutes', () => {
-    const bad: SessionSettings = { bpm: 5.5, ratio: '40:60', durationMinutes: 7 }
+    const bad: SessionSettings = { bpm: 5.5, inhaleShare: 40, durationMinutes: 7 }
     expect(() => validateSettings(bad)).toThrow(RangeError)
   })
 })
 
-// DEFAULT_STRETCH_SETTINGS: typed as StretchSettings, includes ratio, all six fields
+// DEFAULT_STRETCH_SETTINGS: typed as StretchSettings, includes inhaleShare, all six fields
 describe('DEFAULT_STRETCH_SETTINGS (D-01, D-02, STRETCH-03)', () => {
-  it('has ratio field (required by D-02 — ratio consumed by buildStretchSegments)', () => {
-    expect(DEFAULT_STRETCH_SETTINGS).toHaveProperty('ratio')
-    expect(DEFAULT_STRETCH_SETTINGS.ratio).toBe('40:60')
+  it('has inhaleShare field (consumed by buildStretchSegments)', () => {
+    expect(DEFAULT_STRETCH_SETTINGS).toHaveProperty('inhaleShare')
+    expect(DEFAULT_STRETCH_SETTINGS.inhaleShare).toBe(40)
   })
 
-  it('has all six ramp fields: ratio, initialBpm, targetBpm, warmUpMinutes, rampDurationMinutes, coolDownMinutes', () => {
+  it('has all six ramp fields: inhaleShare, initialBpm, targetBpm, warmUpMinutes, rampDurationMinutes, coolDownMinutes', () => {
     expect(DEFAULT_STRETCH_SETTINGS).toHaveProperty('initialBpm')
     expect(DEFAULT_STRETCH_SETTINGS).toHaveProperty('targetBpm')
     expect(DEFAULT_STRETCH_SETTINGS).toHaveProperty('warmUpMinutes')
@@ -326,8 +340,8 @@ describe('DEFAULT_STRETCH_SETTINGS (D-01, D-02, STRETCH-03)', () => {
 // validateStretchSettings: new function carrying the former stretch-branch checks
 describe('validateStretchSettings (D-01, D-02, STRETCH-03)', () => {
   const validStretch: StretchSettings = {
-    ratio: '40:60',
-    targetRatio: '40:60',
+    inhaleShare: 40,
+    targetInhaleShare: 40,
     initialBpm: 6,
     targetBpm: 4,
     warmUpMinutes: 5,
@@ -340,7 +354,7 @@ describe('validateStretchSettings (D-01, D-02, STRETCH-03)', () => {
     const result = validateStretchSettings(validStretch)
     expect(result.initialBpm).toBe(6)
     expect(result.targetBpm).toBe(4)
-    expect(result.ratio).toBe('40:60')
+    expect(result.inhaleShare).toBe(40)
   })
 
   it('throws RangeError for invalid initialBpm (not in BPM_OPTIONS)', () => {
@@ -370,20 +384,65 @@ describe('validateStretchSettings (D-01, D-02, STRETCH-03)', () => {
     expect(() => validateStretchSettings(bad)).toThrow(RangeError)
   })
 
-  it('throws RangeError for invalid ratio', () => {
-    const bad: StretchSettings = { ...validStretch, ratio: '99:01' as never }
+  it('throws RangeError for invalid inhaleShare', () => {
+    const bad: StretchSettings = { ...validStretch, inhaleShare: 99 }
     expect(() => validateStretchSettings(bad)).toThrow(RangeError)
   })
 
-  it('throws RangeError for invalid targetRatio', () => {
-    const bad: StretchSettings = { ...validStretch, targetRatio: '99:01' as never }
+  it('throws RangeError for invalid targetInhaleShare', () => {
+    const bad: StretchSettings = { ...validStretch, targetInhaleShare: 99 }
     expect(() => validateStretchSettings(bad)).toThrow(RangeError)
   })
 
-  it('accepts a targetRatio that differs from the start ratio in either direction (no ordering constraint, FR-11)', () => {
-    const moreExhale: StretchSettings = { ...validStretch, ratio: '50:50', targetRatio: '20:80' }
+  it('accepts a targetInhaleShare that differs from the start share in either direction (no ordering constraint, FR-11)', () => {
+    const moreExhale: StretchSettings = { ...validStretch, inhaleShare: 50, targetInhaleShare: 20 }
     expect(() => validateStretchSettings(moreExhale)).not.toThrow()
-    const moreInhale: StretchSettings = { ...validStretch, ratio: '20:80', targetRatio: '50:50' }
+    const moreInhale: StretchSettings = { ...validStretch, inhaleShare: 20, targetInhaleShare: 50 }
     expect(() => validateStretchSettings(moreInhale)).not.toThrow()
+  })
+})
+
+describe('nearestOption', () => {
+  it('returns the closest option, breaking ties toward the higher option', () => {
+    expect(nearestOption([1, 2, 3], 2.4)).toBe(2)
+    expect(nearestOption([50, 40, 30, 20], 35)).toBe(40) // tie 35 → higher
+    expect(nearestOption([50, 40, 30, 20], 37)).toBe(40)
+  })
+
+  it('returns the value unchanged for an empty option list', () => {
+    expect(nearestOption([], 3.35)).toBe(3.35)
+  })
+})
+
+describe('snapSessionSettingsToPresets', () => {
+  it('snaps off-grid bpm and inhaleShare to nearest presets', () => {
+    const snapped = snapSessionSettingsToPresets({ bpm: 3.35, inhaleShare: 37, durationMinutes: 10 })
+    expect(snapped).toEqual({ bpm: 3.5, inhaleShare: 40, durationMinutes: 10 })
+  })
+
+  it('returns the same reference when already on-grid', () => {
+    const onGrid: SessionSettings = { bpm: 5.5, inhaleShare: 40, durationMinutes: 10 }
+    expect(snapSessionSettingsToPresets(onGrid)).toBe(onGrid)
+  })
+})
+
+describe('snapStretchSettingsToPresets', () => {
+  it('snaps free values to presets while keeping targetBpm strictly below initialBpm', () => {
+    const snapped = snapStretchSettingsToPresets({
+      ...DEFAULT_STRETCH_SETTINGS,
+      initialBpm: 5.47,
+      targetBpm: 4.55,
+      inhaleShare: 37,
+      targetInhaleShare: 22,
+    })
+    expect(snapped.initialBpm).toBe(5.5)
+    expect(snapped.targetBpm).toBe(4.5)
+    expect(snapped.targetBpm).toBeLessThan(snapped.initialBpm)
+    expect(snapped.inhaleShare).toBe(40)
+    expect(snapped.targetInhaleShare).toBe(20)
+  })
+
+  it('returns the same reference when already on-grid', () => {
+    expect(snapStretchSettingsToPresets(DEFAULT_STRETCH_SETTINGS)).toBe(DEFAULT_STRETCH_SETTINGS)
   })
 })

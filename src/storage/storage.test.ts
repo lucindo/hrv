@@ -98,17 +98,17 @@ describe('writeEnvelope', () => {
   })
 
   it('preserves on-disk version when reading; stamps STATE_VERSION on write', () => {
-    // Seed a v4 envelope (simulates a future schema written by a newer build
-    // in another tab). Must be > STATE_VERSION (3) to exercise the future-version
+    // Seed a v5 envelope (simulates a future schema written by a newer build
+    // in another tab). Must be > STATE_VERSION (4) to exercise the future-version
     // guard. `prefs` is the forward-compat probe — the spread must let it survive
     // the readEnvelope round-trip.
     window.localStorage.setItem(STATE_KEY, JSON.stringify({
-      version: 4, settings: { bpm: 4 }, prefs: { theme: 'dark' },
+      version: 5, settings: { bpm: 4 }, prefs: { theme: 'dark' },
     }))
-    // STORAGE-01: readEnvelope returns the on-disk numeric version (4),
-    // NOT STATE_VERSION (3). The known settings subtree round-trips.
+    // STORAGE-01: readEnvelope returns the on-disk numeric version (5),
+    // NOT STATE_VERSION (4). The known settings subtree round-trips.
     const env = readEnvelope()
-    expect(env.version).toBe(4)
+    expect(env.version).toBe(5)
     expect(env.settings).toEqual({ bpm: 4 })
     // STORAGE-01: unknown top-level fields survive the read (positive forward-compat
     // coverage). Type-cast required because Envelope.prefs is not statically declared.
@@ -116,23 +116,23 @@ describe('writeEnvelope', () => {
     // would not be caught by the post-write disk-dump check.
     expect((env as unknown as Record<string, unknown>).prefs)
       .toEqual({ theme: 'dark' })
-    // STORAGE-02: disk version 4 > STATE_VERSION 3 → write refused.
+    // STORAGE-02: disk version 5 > STATE_VERSION 4 → write refused.
     // The caller's `version: 1` does NOT require an `as any` cast because
     // Envelope.version is widened to `number`.
     writeEnvelope({ version: 1, settings: { bpm: 5 } })
-    // Disk unchanged: the refused write left the v4 envelope intact.
+    // Disk unchanged: the refused write left the v5 envelope intact.
     const rawAfter = window.localStorage.getItem(STATE_KEY)
     expect(rawAfter).not.toBeNull()
     // Reason: rawAfter non-null asserted by expect().not.toBeNull() above.
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    expect(JSON.parse(rawAfter!) as unknown).toMatchObject({ version: 4, settings: { bpm: 4 } })
+    expect(JSON.parse(rawAfter!) as unknown).toMatchObject({ version: 5, settings: { bpm: 4 } })
   })
 
   it('writeEnvelope refuses to overwrite a future-version on-disk envelope (STORAGE-02)', () => {
-    // Seed a v4-only envelope (no known subtrees) to isolate the version guard.
-    // v4 > STATE_VERSION (3) makes it a genuine future schema.
-    window.localStorage.setItem(STATE_KEY, JSON.stringify({ version: 4 }))
-    // Caller attempts to land 99-session stats on top of the v3 envelope.
+    // Seed a v5-only envelope (no known subtrees) to isolate the version guard.
+    // v5 > STATE_VERSION (4) makes it a genuine future schema.
+    window.localStorage.setItem(STATE_KEY, JSON.stringify({ version: 5 }))
+    // Caller attempts to land 99-session stats on top of the v5 envelope.
     // The 99-session probe gives the negative assertion something concrete
     // to test — if the guard fails, the stats subtree appears on disk.
     writeEnvelope({
@@ -144,12 +144,12 @@ describe('writeEnvelope', () => {
         lastSessionDurationSeconds: null,
       },
     })
-    // Silent refusal: disk envelope unchanged at version: 4.
+    // Silent refusal: disk envelope unchanged at version: 5.
     const rawAfter = window.localStorage.getItem(STATE_KEY)
     expect(rawAfter).not.toBeNull()
     // Reason: rawAfter non-null asserted by expect().not.toBeNull() above.
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    expect(JSON.parse(rawAfter!) as unknown).toMatchObject({ version: 4 })
+    expect(JSON.parse(rawAfter!) as unknown).toMatchObject({ version: 5 })
     // Negative: 99-session probe was NOT written.
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(JSON.parse(rawAfter!) as unknown).not.toMatchObject({ stats: { totalSessions: 99 } })
@@ -175,9 +175,9 @@ describe('migrateEnvelope v1→v2 (PRACTICE-04)', () => {
     const practices = migrated.practices as {
       resonant: { settings: unknown; stats: unknown }
     }
-    // The flat resonant data is carried into practices.resonant verbatim —
-    // downstream coercers validate it field-by-field as always.
-    expect(practices.resonant.settings).toEqual(V1_SETTINGS)
+    // The flat resonant data is carried into practices.resonant, with the v3→v4
+    // step adding numeric inhaleShare from the legacy ratio label (orphan kept).
+    expect(practices.resonant.settings).toEqual({ ...V1_SETTINGS, inhaleShare: 40 })
     expect(practices.resonant.stats).toEqual(V1_STATS)
     expect(migrated.activePractice).toBe('resonant')
   })
@@ -193,20 +193,20 @@ describe('migrateEnvelope v1→v2 (PRACTICE-04)', () => {
     expect(migrated.stats).toEqual(V1_STATS)
   })
 
-  it('is idempotent on already-migrated v3 data (fromVersion >= 3 skips both ladder steps)', () => {
-    const v3Envelope = {
-      version: 3,
+  it('is idempotent at the terminal version (fromVersion >= STATE_VERSION skips every ladder step)', () => {
+    const terminalEnvelope = {
+      version: STATE_VERSION,
       practices: {
-        resonant: { settings: V1_SETTINGS, stats: V1_STATS },
-        stretch: { settings: V1_SETTINGS, stats: { totalSessions: 0, totalElapsedSeconds: 0, lastSessionAtMs: null, lastSessionDurationSeconds: null } },
+        resonant: { settings: { ...V1_SETTINGS, inhaleShare: 40 }, stats: V1_STATS },
+        stretch: { settings: { ...V1_SETTINGS, inhaleShare: 40 }, stats: { totalSessions: 0, totalElapsedSeconds: 0, lastSessionAtMs: null, lastSessionDurationSeconds: null } },
         naviKriya: { settings: {}, stats: {} },
       },
       activePractice: 'naviKriya',
     }
-    const out = migrateEnvelope(v3Envelope, 3)
-    // Both fromVersion < 2 and fromVersion < 3 guards are false — practices/activePractice
-    // pass through unchanged, including a non-default activePractice.
-    expect(out.practices).toEqual(v3Envelope.practices)
+    const out = migrateEnvelope(terminalEnvelope, STATE_VERSION)
+    // Every guard is false — practices/activePractice pass through unchanged,
+    // including a non-default activePractice.
+    expect(out.practices).toEqual(terminalEnvelope.practices)
     expect(out.activePractice).toBe('naviKriya')
   })
 
@@ -218,7 +218,7 @@ describe('migrateEnvelope v1→v2 (PRACTICE-04)', () => {
     const practices = env.practices as {
       resonant: { settings: unknown; stats: unknown }
     }
-    expect(practices.resonant.settings).toEqual(V1_SETTINGS)
+    expect(practices.resonant.settings).toEqual({ ...V1_SETTINGS, inhaleShare: 40 })
     expect(practices.resonant.stats).toEqual(V1_STATS)
     expect(env.activePractice).toBe('resonant')
   })
@@ -278,7 +278,8 @@ describe('migrateEnvelope v2→v3 (Phase 34 STRETCH-03)', () => {
     const migrated = migrateEnvelope(V2_ENVELOPE, 2)
     const practices = migrated.practices as Record<string, unknown>
     const stretch = practices['stretch'] as { settings: unknown; stats: unknown }
-    expect(stretch.settings).toEqual(RESONANT_SETTINGS_WITH_RAMP)
+    // v3→v4 also adds inhaleShare from the seeded blob's ratio label.
+    expect(stretch.settings).toEqual({ ...RESONANT_SETTINGS_WITH_RAMP, inhaleShare: 40 })
   })
 
   it('seeds practices.stretch.stats with ZERO stats (inline literal)', () => {
@@ -288,12 +289,12 @@ describe('migrateEnvelope v2→v3 (Phase 34 STRETCH-03)', () => {
     expect(stretch.stats).toEqual(ZERO_STATS_LITERAL)
   })
 
-  it('leaves practices.resonant byte-equal to its pre-migration value (untouched)', () => {
+  it('preserves practices.resonant (ramp orphans intact), adding inhaleShare from its ratio label', () => {
     const migrated = migrateEnvelope(V2_ENVELOPE, 2)
     const practices = migrated.practices as Record<string, { settings: unknown; stats: unknown }>
     const resonant = practices['resonant']
     if (resonant === undefined) throw new Error('Expected resonant practice after migration')
-    expect(resonant.settings).toEqual(RESONANT_SETTINGS_WITH_RAMP)
+    expect(resonant.settings).toEqual({ ...RESONANT_SETTINGS_WITH_RAMP, inhaleShare: 40 })
     expect(resonant.stats).toEqual(RESONANT_STATS)
   })
 
@@ -310,8 +311,8 @@ describe('migrateEnvelope v2→v3 (Phase 34 STRETCH-03)', () => {
     expect(out.practices).toEqual(v3Envelope.practices)
   })
 
-  it('STATE_VERSION is 3', () => {
-    expect(STATE_VERSION).toBe(3)
+  it('STATE_VERSION is 4', () => {
+    expect(STATE_VERSION).toBe(4)
   })
 })
 
@@ -352,13 +353,13 @@ describe('migrateEnvelope v1→v3 chained (HOUSE-09)', () => {
       resonant: { settings: unknown; stats: unknown }
       stretch: { settings: unknown; stats: unknown }
     }
-    // v1→v2 step: resonant slice populated losslessly from flat fields.
-    expect(practices.resonant.settings).toEqual(V1_SETTINGS)
+    // v1→v2 step: resonant slice populated from flat fields; v3→v4 adds inhaleShare.
+    expect(practices.resonant.settings).toEqual({ ...V1_SETTINGS, inhaleShare: 40 })
     expect(practices.resonant.stats).toEqual(V1_STATS)
     expect(migrated.activePractice).toBe('resonant')
-    // v2→v3 step: stretch slice seeded — settings carries the resonant blob
-    // (downstream coerceStretchSettings validates ramp fields), stats is ZERO.
-    expect(practices.stretch.settings).toEqual(V1_SETTINGS)
+    // v2→v3 step: stretch slice seeded from the resonant blob (downstream
+    // coerceStretchSettings validates ramp fields), stats ZERO; v3→v4 adds inhaleShare.
+    expect(practices.stretch.settings).toEqual({ ...V1_SETTINGS, inhaleShare: 40 })
     expect(practices.stretch.stats).toEqual(ZERO_STATS_LITERAL)
   })
 
@@ -377,10 +378,57 @@ describe('migrateEnvelope v1→v3 chained (HOUSE-09)', () => {
     expect(twice).toEqual(once)
   })
 
-  it('STATE_VERSION is 3 (ladder terminal)', () => {
-    // Locks the test against silent ladder extension — if a future v3→v4 step
+  it('STATE_VERSION is 4 (ladder terminal)', () => {
+    // Locks the test against silent ladder extension — if a future v4→v5 step
     // ships, this assertion fails and forces the HOUSE-09 regression to be
     // re-evaluated against the new terminal.
-    expect(STATE_VERSION).toBe(3)
+    expect(STATE_VERSION).toBe(4)
+  })
+})
+
+describe('migrateEnvelope v3→v4 (ratio label → inhaleShare)', () => {
+  it('converts a resonant ratio label to numeric inhaleShare, keeping the label orphan', () => {
+    const env = {
+      version: 3,
+      practices: { resonant: { settings: { bpm: 4, ratio: '30:70', durationMinutes: 10 }, stats: {} } },
+    }
+    const out = migrateEnvelope(env, 3)
+    const resonant = (out.practices as Record<string, { settings: Record<string, unknown> }>)['resonant']
+    expect(resonant?.settings).toMatchObject({ inhaleShare: 30, ratio: '30:70' })
+  })
+
+  it('converts stretch ratio + targetRatio to inhaleShare + targetInhaleShare', () => {
+    const env = {
+      version: 3,
+      practices: { stretch: { settings: { ratio: '50:50', targetRatio: '20:80', initialBpm: 6, targetBpm: 4 }, stats: {} } },
+    }
+    const out = migrateEnvelope(env, 3)
+    const stretch = (out.practices as Record<string, { settings: Record<string, unknown> }>)['stretch']
+    expect(stretch?.settings).toMatchObject({ inhaleShare: 50, targetInhaleShare: 20 })
+  })
+
+  it('converts naviKriya omLength label to numeric omSeconds, keeping the label orphan', () => {
+    const env = {
+      version: 3,
+      practices: { naviKriya: { settings: { frontCount: 200, omLength: 'slow', rounds: 3, perOmCue: true }, stats: {} } },
+    }
+    const out = migrateEnvelope(env, 3)
+    const nk = (out.practices as Record<string, { settings: Record<string, unknown> }>)['naviKriya']
+    expect(nk?.settings).toMatchObject({ omSeconds: 3.0, omLength: 'slow' })
+  })
+
+  it('leaves a slice with no ratio label untouched', () => {
+    const env = { version: 3, practices: { resonant: { settings: { bpm: 4, durationMinutes: 10 }, stats: {} } } }
+    const out = migrateEnvelope(env, 3)
+    expect(out.practices).toEqual(env.practices)
+  })
+
+  it('is idempotent — re-migrating already-numeric v4 data adds nothing', () => {
+    const v4 = {
+      version: 4,
+      practices: { resonant: { settings: { bpm: 4, inhaleShare: 30, durationMinutes: 10 }, stats: {} } },
+    }
+    const out = migrateEnvelope(v4, 4)
+    expect(out.practices).toEqual(v4.practices)
   })
 })

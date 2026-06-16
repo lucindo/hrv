@@ -15,6 +15,7 @@ import type {
   SessionStatus,
   StretchSettings,
 } from '../domain'
+import { formatRatio } from '../domain'
 import type { FeatureFlags } from '../featureFlags'
 import type { PersistedStats, PracticeId } from '../storage'
 import type { getPracticeToggleStrings } from './practiceCopy'
@@ -243,7 +244,7 @@ export function createPracticeSessionViewModel({
     status: breathing.status,
     inSessionView: breathing.inSessionView,
     bpm: breathing.selectedSettings.bpm,
-    ratio: breathing.selectedSettings.ratio,
+    ratio: formatRatio(breathing.selectedSettings.inhaleShare),
   })
 
   if (activePractice === 'stretch') {

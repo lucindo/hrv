@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-export interface SegmentedControlOption<T extends string> {
+export interface SegmentedControlOption<T extends string | number> {
   id: T
   label: string
   /** Optional glyph rendered to the left of the label. Use for icon-bearing
@@ -8,7 +8,7 @@ export interface SegmentedControlOption<T extends string> {
   glyph?: ReactNode
 }
 
-export interface SegmentedControlProps<T extends string> {
+export interface SegmentedControlProps<T extends string | number> {
   options: ReadonlyArray<SegmentedControlOption<T>>
   value: T
   onChange(this: void, next: T): void
@@ -22,7 +22,7 @@ export interface SegmentedControlProps<T extends string> {
 // - Active button: bg=accent, color=on-accent, weight 600, no shadow
 // - Inactive button: transparent, color=text-soft, weight 500
 // - Buttons: flex-1, px-3 py-2, rounded-full
-export function SegmentedControl<T extends string>({
+export function SegmentedControl<T extends string | number>({
   options,
   value,
   onChange,

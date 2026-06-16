@@ -3,7 +3,7 @@ import type { ReactElement } from 'react'
 import { SegmentedControl, type SegmentedControlOption } from './primitives/SegmentedControl'
 import { SettingsRow } from './SettingsRow'
 
-export interface SettingsSegmentedRowProps<T extends string> {
+export interface SettingsSegmentedRowProps<T extends string | number> {
   label: string
   ariaLabel: string
   value: T
@@ -16,7 +16,7 @@ export interface SettingsSegmentedRowProps<T extends string> {
 // pill, with the same border-t / py-3 row chrome as the Stepper rows so
 // settings sheets read as a single stack. The fieldset wrapper preserves
 // role="group" for settingGroup() queries.
-export function SettingsSegmentedRow<T extends string>({
+export function SettingsSegmentedRow<T extends string | number>({
   label,
   ariaLabel,
   value,

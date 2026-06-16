@@ -11,7 +11,7 @@
 import {
   DEFAULT_SETTINGS,
   isValidBpm,
-  isValidRatio,
+  isValidInhaleShare,
   isValidDuration,
   type SessionSettings,
 } from '../domain/settings'
@@ -21,8 +21,8 @@ import { asRecord, readEnvelope, writeEnvelope, type StorageDeps } from './stora
 export function coerceSettings(raw: unknown): SessionSettings {
   const r = asRecord(raw)
   return {
-    bpm:             isValidBpm(r.bpm)           ? r.bpm             : DEFAULT_SETTINGS.bpm,
-    ratio:           isValidRatio(r.ratio)       ? r.ratio           : DEFAULT_SETTINGS.ratio,
+    bpm:             isValidBpm(r.bpm)                  ? r.bpm             : DEFAULT_SETTINGS.bpm,
+    inhaleShare:     isValidInhaleShare(r.inhaleShare)  ? r.inhaleShare     : DEFAULT_SETTINGS.inhaleShare,
     durationMinutes: isValidDuration(r.durationMinutes) ? r.durationMinutes : DEFAULT_SETTINGS.durationMinutes,
   }
 }

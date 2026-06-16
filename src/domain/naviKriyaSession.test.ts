@@ -6,7 +6,7 @@ import {
   getNaviKriyaBackCount,
   getNaviKriyaPhaseTarget,
 } from './naviKriyaSession'
-import { DEFAULT_NK_SETTINGS, type NaviKriyaSettings } from './naviKriyaSettings'
+import { DEFAULT_NK_SETTINGS, NK_OM_SECONDS, type NaviKriyaSettings } from './naviKriyaSettings'
 
 describe('Navi Kriya session calculations', () => {
   it('derives the back count from the front count', () => {
@@ -41,7 +41,7 @@ describe('Navi Kriya session calculations', () => {
   it('estimates seconds from front+back+held-OM and per-round lead-ins (non-default fixture)', () => {
     const settings: NaviKriyaSettings = {
       frontCount: 200,
-      omLength: 'slow',
+      omSeconds: NK_OM_SECONDS.slow,
       rounds: 2,
       perOmCue: true,
     }

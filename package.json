@@ -1,7 +1,7 @@
 {
   "name": "hrv-breathing",
   "private": true,
-  "version": "2.4.2",
+  "version": "2.5.0",
   "type": "module",
   "scripts": {
     "dev": "node --disable-warning=DEP0205 ./node_modules/vite/bin/vite.js",

@@ -56,10 +56,10 @@ describe('AdvancedPage', () => {
     expect(screen.getAllByRole('radiogroup')).toHaveLength(2)
   })
 
-  it('renders three switches for Breathing effect, Switcher icons, and Bypass silent mode', () => {
+  it('renders four switches for Breathing effect, Switcher icons, Bypass silent mode, and Precise control', () => {
     renderPage()
     const switches = screen.getAllByRole('switch')
-    expect(switches).toHaveLength(3)
+    expect(switches).toHaveLength(4)
     expect(
       screen.getByRole('switch', { name: UI_STRINGS.en.advanced.breathingEffect.label }),
     ).toBeInTheDocument()
@@ -68,6 +68,9 @@ describe('AdvancedPage', () => {
     ).toBeInTheDocument()
     expect(
       screen.getByRole('switch', { name: UI_STRINGS.en.advanced.bypassSilentMode.label }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('switch', { name: UI_STRINGS.en.advanced.preciseControl.label }),
     ).toBeInTheDocument()
   })
 
@@ -131,10 +134,12 @@ describe('AdvancedPage', () => {
     it('renders Bypass silent mode toggle below the other two Behavior toggles (ADV-03 order)', () => {
       renderPage()
       const switches = screen.getAllByRole('switch')
-      expect(switches).toHaveLength(3)
-      // ADV-03: bypass toggle is the THIRD (below breathingEffect + switcherIcons)
-      // Reason: switches[2] non-null asserted by toHaveLength(3) above.
+      expect(switches).toHaveLength(4)
+      // ADV-03: bypass toggle is the THIRD (below breathingEffect + switcherIcons);
+      // precise control follows as the fourth.
+      // Reason: switches[2] non-null asserted by toHaveLength(4) above.
       expect(switches[2]).toHaveAccessibleName(UI_STRINGS.en.advanced.bypassSilentMode.label)
+      expect(switches[3]).toHaveAccessibleName(UI_STRINGS.en.advanced.preciseControl.label)
     })
 
     it('Bypass silent mode defaults to ON (checked) for a fresh storage state (ADV-03)', () => {

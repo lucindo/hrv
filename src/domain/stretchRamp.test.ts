@@ -14,8 +14,8 @@ import type { StretchSettings } from './settings'
 
 // Base stretch settings fixture (valid, finite): warm-up 5 + ramp 20 + cool-down 5 = 30 min.
 const baseSettings: StretchSettings = {
-  ratio: '40:60',
-  targetRatio: '40:60',
+  inhaleShare: 40,
+  targetInhaleShare: 40,
   initialBpm: 6,
   targetBpm: 4,
   warmUpMinutes: 5,
@@ -201,8 +201,8 @@ describe('buildStretchSegments (single-arg, StretchSettings — D-02)', () => {
   // stay monotonic across the full session sweep.
   it('WR-01: wide slow ramp — cool-down span stays positive and cycleIndex is monotonic', () => {
     const wideSlowSettings: StretchSettings = {
-      ratio: '40:60',
-      targetRatio: '40:60',
+      inhaleShare: 40,
+      targetInhaleShare: 40,
       initialBpm: 14,
       targetBpm: 1.5,
       warmUpMinutes: 10,
@@ -325,8 +325,8 @@ describe('getStretchFrame', () => {
   it('does not complete early — the cool-down segment runs to its endSec (CR-01 regression)', () => {
     // Drift-prone config: non-integer cycle counts in every segment.
     const driftSettings: StretchSettings = {
-      ratio: '40:60',
-      targetRatio: '40:60',
+      inhaleShare: 40,
+      targetInhaleShare: 40,
       initialBpm: 5.5,
       targetBpm: 4.5,
       warmUpMinutes: 5,
@@ -600,8 +600,8 @@ describe('computeStretchTotalSec (StretchSettings — D-02)', () => {
     // the requested whole-minute total exactly — no longer the raw snapped segment drift.
     // DEFAULT_STRETCH_SETTINGS is the same 5.5→4.5 BPM, 5/5/5 fixture.
     const minSettings: StretchSettings = {
-      ratio: '40:60',
-      targetRatio: '40:60',
+      inhaleShare: 40,
+      targetInhaleShare: 40,
       initialBpm: 5.5,
       targetBpm: 4.5,
       warmUpMinutes: 5,
@@ -630,8 +630,8 @@ describe('computeStretchTotalSec (StretchSettings — D-02)', () => {
     // GAP-1 rework: the cool-down absorbs the residual so the final endSec equals the requested
     // whole-minute total exactly — previously the snapped total differed from the raw minute sum.
     const driftSettings: StretchSettings = {
-      ratio: '40:60',
-      targetRatio: '40:60',
+      inhaleShare: 40,
+      targetInhaleShare: 40,
       initialBpm: 5.5,
       targetBpm: 4,
       warmUpMinutes: 5,
@@ -748,8 +748,8 @@ describe('ratio transition — start ratio walks toward target ratio (FR-9, FR-1
 
   it('FR-9: targetRatio === ratio gives a uniform inhale fraction across all stages', () => {
     const segs = buildStretchSegments({
-      ratio: '40:60',
-      targetRatio: '40:60',
+      inhaleShare: 40,
+      targetInhaleShare: 40,
       initialBpm: 6,
       targetBpm: 4,
       warmUpMinutes: 5,
@@ -763,8 +763,8 @@ describe('ratio transition — start ratio walks toward target ratio (FR-9, FR-1
 
   it('FR-10: warm-up holds start, ramp shifts monotonically by step, cool-down holds target', () => {
     const segs = buildStretchSegments({
-      ratio: '50:50',     // 50% inhale
-      targetRatio: '20:80', // 20% inhale
+      inhaleShare: 50,     // 50% inhale
+      targetInhaleShare: 20, // 20% inhale
       initialBpm: 6,
       targetBpm: 4,
       warmUpMinutes: 5,
@@ -793,8 +793,8 @@ describe('ratio transition — start ratio walks toward target ratio (FR-9, FR-1
 
   it('FR-11: a target ratio with MORE inhale than start walks the inhale fraction upward', () => {
     const segs = buildStretchSegments({
-      ratio: '20:80',     // 20% inhale
-      targetRatio: '50:50', // 50% inhale
+      inhaleShare: 20,     // 20% inhale
+      targetInhaleShare: 50, // 50% inhale
       initialBpm: 6,
       targetBpm: 4,
       warmUpMinutes: 5,

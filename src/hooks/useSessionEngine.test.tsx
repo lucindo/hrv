@@ -9,7 +9,7 @@ import { useSessionEngine } from './useSessionEngine'
 const defaultSettings: SessionSettings = {
   ...DEFAULT_SETTINGS,
   bpm: 5.5,
-  ratio: '40:60',
+  inhaleShare: 40,
   durationMinutes: 10,
 }
 
@@ -374,7 +374,7 @@ describe('useSessionEngine — WR-03 stretch round-trip selectedSettings preserv
     const resonantSettings: SessionSettings = {
       ...defaultSettings,
       bpm: 5.5,
-      ratio: '40:60',
+      inhaleShare: 40,
       durationMinutes: 20,
     }
 

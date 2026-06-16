@@ -16,9 +16,10 @@
 // subtree moves, update the FOUC script too — nothing in the build catches the
 // desync, and returning users get a theme flash on every load.
 export const STATE_KEY = 'hrv:state:v1'
-// STATE_VERSION bumped 2→3: migrateEnvelope seeds the practices.stretch slice
-// from the resonant blob and zeroes stretch stats.
-export const STATE_VERSION = 3 as const
+// STATE_VERSION bumped 3→4: migrateEnvelope converts ratio labels ('40:60') to
+// numeric inhaleShare (resonant + stretch) and omLength ('medium') to numeric
+// omSeconds (naviKriya) — the advanced precise-control number model.
+export const STATE_VERSION = 4 as const
 
 export interface StorageDeps {
   now?: () => number       // defaults to Date.now (consumed by stats.ts / format.ts)
@@ -117,6 +118,53 @@ export function migrateEnvelope(env: Envelope, fromVersion: number): Envelope {
       },
     }
     // resonant slice is untouched — stretch ramp fields remain there as harmless orphans
+  }
+
+  if (fromVersion < 4) {
+    // v3→v4: ratio labels become numeric inhaleShare. The legacy label→share map is
+    // frozen historical data (like LEGACY_TIMBRE_REMAP in prefs.ts) and lives here,
+    // not in the domain — the domain no longer knows the label form. Old `ratio` /
+    // `targetRatio` keys are left as harmless orphans (lossless-migration precedent).
+    // Only slices that actually carry a label are rewritten — absent slices and
+    // already-numeric ones pass through untouched, keeping the step idempotent.
+    const RATIO_LABEL_TO_INHALE: Readonly<Record<string, number>> = {
+      '50:50': 50, '40:60': 40, '30:70': 30, '20:80': 20,
+    }
+    const toShare = (label: unknown): number | undefined =>
+      typeof label === 'string' ? RATIO_LABEL_TO_INHALE[label] : undefined
+    const practices = asRecord(out.practices)
+    const next: Record<string, unknown> = { ...practices }
+    for (const key of ['resonant', 'stretch']) {
+      if (practices[key] === undefined) continue
+      const slice = asRecord(practices[key])
+      const settings = asRecord(slice.settings)
+      const inhaleShare = toShare(settings.ratio)
+      const targetInhaleShare = toShare(settings.targetRatio)
+      if (inhaleShare === undefined && targetInhaleShare === undefined) continue
+      next[key] = {
+        ...slice,
+        settings: {
+          ...settings,
+          ...(inhaleShare !== undefined ? { inhaleShare } : {}),
+          ...(targetInhaleShare !== undefined ? { targetInhaleShare } : {}),
+        },
+      }
+    }
+    // naviKriya: omLength label ('fast'/'medium'/'slow') → numeric omSeconds.
+    const OM_LENGTH_TO_SECONDS: Readonly<Record<string, number>> = {
+      fast: 1.75, medium: 2.16, slow: 3.0,
+    }
+    if (practices['naviKriya'] !== undefined) {
+      const slice = asRecord(practices['naviKriya'])
+      const settings = asRecord(slice.settings)
+      const omSeconds = typeof settings.omLength === 'string'
+        ? OM_LENGTH_TO_SECONDS[settings.omLength]
+        : undefined
+      if (omSeconds !== undefined) {
+        next['naviKriya'] = { ...slice, settings: { ...settings, omSeconds } }
+      }
+    }
+    out = { ...out, practices: next }
   }
 
   return out

@@ -24,6 +24,7 @@ const DEFAULT_FULL_PREFS: UserPrefs = {
   orbIdle: 'ambient',
   switcherIcon: false,
   bypassSilentMode: true,
+  advanced: false,
 }
 
 beforeEach(() => {
