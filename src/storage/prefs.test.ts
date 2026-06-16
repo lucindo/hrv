@@ -11,6 +11,7 @@ import {
   coerceOrbIdle,
   coerceSwitcherIcon,
   coerceBypassSilentMode,
+  coerceAdvanced,
   loadPrefs,
   savePrefs,
   DEFAULT_PREFS,
@@ -438,7 +439,7 @@ describe('loadPrefs / savePrefs round-trip', () => {
     expect(loadPrefs()).toEqual(next)
   })
 
-  it('round-trips a 9-field UserPrefs with the 5 new flags set to non-default values (Phase 47 + 49.1)', () => {
+  it('round-trips a full UserPrefs with every non-default flag set', () => {
     // Full-fidelity round-trip: every new field carries a non-default value so the
     // assertion fails if any coercer, the JSON re-hydration, or the envelope-merge drops a value.
     const fullPrefs: UserPrefs = {
@@ -448,6 +449,7 @@ describe('loadPrefs / savePrefs round-trip', () => {
       orbIdle: 'still',
       switcherIcon: true,
       bypassSilentMode: false, // non-default (default is true)
+      advanced: true,          // non-default (default is false)
     }
     savePrefs(fullPrefs)
     expect(loadPrefs()).toEqual(fullPrefs)
@@ -484,17 +486,33 @@ describe('loadPrefs / savePrefs round-trip', () => {
   })
 })
 
+describe('coerceAdvanced (precise-control opt-in, default false)', () => {
+  it('returns raw booleans verbatim', () => {
+    expect(coerceAdvanced(true)).toBe(true)
+    expect(coerceAdvanced(false)).toBe(false)
+  })
+
+  it('falls back to false for non-boolean inputs (strings / null / numbers / objects)', () => {
+    expect(coerceAdvanced('true')).toBe(false)
+    expect(coerceAdvanced(null)).toBe(false)
+    expect(coerceAdvanced(undefined)).toBe(false)
+    expect(coerceAdvanced(1)).toBe(false)
+    expect(coerceAdvanced({})).toBe(false)
+  })
+})
+
 describe('DEFAULT_PREFS shape', () => {
-  // The 9-field count guards against adding a pref field without a default. The
+  // The field count guards against adding a pref field without a default. The
   // individual coercer defaults and the kuthasta alias round-trip are covered by
   // their own describe blocks above.
-  it('DEFAULT_PREFS has the 9 contracted fields with their defaults', () => {
+  it('DEFAULT_PREFS has the 10 contracted fields with their defaults', () => {
     expect(DEFAULT_PREFS.breathingShape).toBe('orb-halo')
     expect(DEFAULT_PREFS.ringCue).toBe('progress-arc')
     expect(DEFAULT_PREFS.orbIdle).toBe('ambient')
     expect(DEFAULT_PREFS.switcherIcon).toBe(false)
     expect(DEFAULT_PREFS.bypassSilentMode).toBe(true)
-    expect(Object.keys(DEFAULT_PREFS)).toHaveLength(9)
+    expect(DEFAULT_PREFS.advanced).toBe(false)
+    expect(Object.keys(DEFAULT_PREFS)).toHaveLength(10)
   })
 })
 

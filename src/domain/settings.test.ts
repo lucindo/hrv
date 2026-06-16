@@ -23,9 +23,16 @@ import {
 } from './settings'
 import type { SessionSettings, StretchSettings } from './settings'
 
-describe('isValidBpm (HYGIENE-02 D-08)', () => {
-  it('returns true for valid BPM_OPTIONS members (e.g. 5.5)', () => {
+describe('isValidBpm (range 1.0–7.0)', () => {
+  it('returns true for preset members (e.g. 5.5) and the bounds (1, 7)', () => {
     expect(isValidBpm(5.5)).toBe(true)
+    expect(isValidBpm(1)).toBe(true)
+    expect(isValidBpm(7)).toBe(true)
+  })
+
+  it('returns true for in-range non-preset values (advanced free-set, e.g. 3.35)', () => {
+    expect(isValidBpm(3.35)).toBe(true)
+    expect(isValidBpm(6.83)).toBe(true)
   })
 
   it('returns false for out-of-range numbers (0, 7.5)', () => {

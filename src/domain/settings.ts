@@ -33,6 +33,11 @@ export interface StretchSettings {
   coolDownMinutes: CoolDownMinutes
 }
 
+// HRV BPM bounds (advanced free-set, Q2). BPM_OPTIONS below are the discrete
+// presets shown when advanced is off and span exactly this range.
+export const BPM_MIN = 1
+export const BPM_MAX = 7
+
 export const BPM_OPTIONS = [
   1,
   1.5,
@@ -182,7 +187,7 @@ export function isValidLocale(v: unknown): v is LocaleId {
 export const DEFAULT_LOCALE: LocaleId = 'en'
 
 export function isValidBpm(v: unknown): v is number {
-  return typeof v === 'number' && Number.isFinite(v) && (BPM_OPTIONS as readonly number[]).includes(v)
+  return typeof v === 'number' && Number.isFinite(v) && v >= BPM_MIN && v <= BPM_MAX
 }
 
 export function isValidRatio(v: unknown): v is RatioLabel {

@@ -66,6 +66,7 @@ describe('usePreferenceChoice', () => {
       orbIdle: 'still',
       switcherIcon: true,
       bypassSilentMode: true,
+      advanced: false,
     })
     const { result } = renderHook(() => usePreferenceChoice('ringCue'))
 
