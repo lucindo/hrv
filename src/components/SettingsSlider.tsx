@@ -82,7 +82,7 @@ export function SettingsSlider({
           +
         </button>
         <output
-          aria-live="polite"
+          aria-hidden="true"
           className="min-w-[56px] text-right text-base font-medium tabular-nums text-[var(--color-breathing-text)]"
         >
           {formatValue(value)}

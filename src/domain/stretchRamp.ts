@@ -50,7 +50,8 @@ export interface StretchSessionFrame extends SessionFrame {
 
 /**
  * Builds the piecewise-constant segment table for a stretch session.
- * Accepts a single StretchSettings argument; ratio is read from settings.ratio.
+ * Accepts a single StretchSettings argument; the inhale share is read from
+ * settings.inhaleShare (and settings.targetInhaleShare for the ramp).
  *
  * Step 1: warm-up hold at initialBpm for warmUpMinutes — snapped to whole cycles so
  *         the boundary lands on an Out→In transition (BPM never steps mid-breath).
