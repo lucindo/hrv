@@ -40,8 +40,7 @@ export function ResonantSettingsForm({
   onExtendDuration,
   strings,
 }: ResonantSettingsFormProps): ReactElement {
-  const formatBpm = (value: number): string => `${String(value)} ${strings.bpmUnit}`
-  const formatBpmSlider = (value: number): string => `${formatTrimmed(value)} ${strings.bpmUnit}`
+  const formatBpm = (value: number): string => `${formatTrimmed(value)} ${strings.bpmUnit}`
   const formatDuration = (value: DurationOption): string =>
     value === 'open-ended' ? strings.openEndedLabel : `${String(value)} ${strings.minutesUnit}`
 
@@ -76,7 +75,7 @@ export function ResonantSettingsForm({
               min={BPM_MIN}
               max={BPM_MAX}
               nudge={0.05}
-              formatValue={formatBpmSlider}
+              formatValue={formatBpm}
               onChange={(bpm) => { updateSettings({ bpm }) }}
               strings={strings.stepper}
             />

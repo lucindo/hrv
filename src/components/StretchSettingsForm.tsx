@@ -50,8 +50,7 @@ export function StretchSettingsForm({
   onChange,
   strings,
 }: StretchSettingsFormProps): ReactElement {
-  const formatBpm = (value: number): string => `${String(value)} ${strings.bpmUnit}`
-  const formatBpmSlider = (value: number): string => `${formatTrimmed(value)} ${strings.bpmUnit}`
+  const formatBpm = (value: number): string => `${formatTrimmed(value)} ${strings.bpmUnit}`
   const formatMinutes = (value: number): string => `${String(value)} ${strings.minutesUnit}`
   const formatCoolDown = (value: CoolDownMinutes): string =>
     value === 'open-ended' ? strings.holdOpenEndedLabel : `${String(value)} ${strings.minutesUnit}`
@@ -89,7 +88,7 @@ export function StretchSettingsForm({
               min={initialBpmMin}
               max={BPM_MAX}
               nudge={0.05}
-              formatValue={formatBpmSlider}
+              formatValue={formatBpm}
               onChange={(initialBpm) => { updateStretchSettings({ initialBpm }) }}
               strings={strings.stepper}
             />
@@ -132,7 +131,7 @@ export function StretchSettingsForm({
               min={BPM_MIN}
               max={targetBpmMax}
               nudge={0.05}
-              formatValue={formatBpmSlider}
+              formatValue={formatBpm}
               onChange={(targetBpm) => { updateStretchSettings({ targetBpm }) }}
               strings={strings.stepper}
             />

@@ -14,7 +14,6 @@ export interface SettingsSliderProps {
   /** Rounded display label (raw value stays continuous). Also drives aria-valuetext. */
   formatValue: (value: number) => string
   onChange(this: void, value: number): void
-  disabled?: boolean
   strings: UiStrings['practice']['settingsForm']['stepper']
 }
 
@@ -33,11 +32,10 @@ export function SettingsSlider({
   nudge,
   formatValue,
   onChange,
-  disabled = false,
   strings,
 }: SettingsSliderProps): ReactElement {
-  const canDecrease = !disabled && value > min
-  const canIncrease = !disabled && value < max
+  const canDecrease = value > min
+  const canIncrease = value < max
 
   // Nudge lands on a tidy 2-decimal grid so persisted/stepped values stay clean;
   // continuous drag still stores the raw float.
@@ -71,9 +69,8 @@ export function SettingsSlider({
           step="any"
           value={value}
           aria-valuetext={formatValue(value)}
-          disabled={disabled}
           onChange={(e) => { onChange(e.target.valueAsNumber) }}
-          className="h-2 flex-1 cursor-pointer accent-[var(--color-breathing-accent)] disabled:cursor-not-allowed disabled:opacity-45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
+          className="h-2 flex-1 cursor-pointer accent-[var(--color-breathing-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
         />
         <button
           type="button"
