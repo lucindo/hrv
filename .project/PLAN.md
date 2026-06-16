@@ -26,20 +26,21 @@ discrete presets become a UI view + snap-on-toggle-off.
 - [x] Slice 4 — `SettingsSlider` primitive (continuous range + nudges, aria). (`feat(settings): add SettingsSlider primitive`)
 - [x] Slice 5 — forms swap stepper/segmented ↔ slider by `advanced` (via `useAdvancedMode`); Stretch BPM dynamic bounds. (`feat(settings): wire advanced sliders into the three forms`)
 - [x] Slice 6 — advanced toggle in Settings → Behavior + toggle-off snap to nearest preset (Q6) + i18n. (`feat(settings): add Precise control toggle + snap-on-disable`)
+- [x] Post-test UI fixes — SetupCard rounds free BPM; Navi card shows seconds for a free OM pace. (`8207502`)
 
 ## Now
 
-**State** — COMPLETE. All 6 slices landed on `feat/advanced-precise-control`,
-suite 1373/1373, build + lint clean. The "Precise control" toggle (Settings →
-Advanced → Behavior) swaps the discrete pickers for continuous sliders across
-HRV, Stretch, and Navi; turning it off snaps values back to presets. v3→v4
-migration converts persisted labels to the number model.
+**State** — COMPLETE and operator-tested. All 6 slices + 2 post-test UI fixes
+landed on `feat/advanced-precise-control` (11 commits, working tree clean), suite
+1375/1375, build + lint green. Operator confirmed it works; the two SetupCard
+formatting issues they reported are fixed.
 
-**Next** — Operator visual test. Then merge `feat/advanced-precise-control` → `main`
-and release if approved.
+**Next** — Merge `feat/advanced-precise-control` → `main` (awaiting operator
+go-ahead — not yet given), then release/tag if approved.
 
-**Deferred → resolved** — The Q11 coerce-snap was implemented instead as the Q6
-toggle-off reconcile (`useSnapToPresets`), which updates live state immediately;
-no coerce-signature change was needed.
+**Open questions** — None blocking. Optional tiny follow-up: the OM-pace seconds
+unit "s" is hardcoded (locale-neutral) rather than routed through `strings.ts`.
 
-**Open questions** — None.
+**Notes** — Q11 coerce-snap was resolved as the Q6 toggle-off reconcile
+(`useSnapToPresets`), updating live state immediately with no coerce-signature
+change. Decisions: `.project/DECISIONS.md` (Q1–Q11).

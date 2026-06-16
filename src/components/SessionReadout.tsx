@@ -2,6 +2,7 @@ import type { ReactElement } from 'react'
 
 import {
   formatDuration,
+  formatTrimmed,
   type SessionFrame,
   type SessionStatus,
   type StretchStage,
@@ -85,7 +86,7 @@ export function SessionReadout(props: SessionReadoutModeProps): ReactElement | n
   // HRV path: format "{bpm} {bpmUnit} · {ratio}" using the static settings.
   const secondary = frame.currentBpm !== undefined && frame.stage !== undefined
     ? `${frame.currentBpm.toFixed(1)} ${bpmUnit} · ${stageText(frame.stage, strings)}`
-    : `${String(bpm)} ${bpmUnit} · ${ratio}`
+    : `${formatTrimmed(bpm)} ${bpmUnit} · ${ratio}`
 
   return (
     <section aria-label={strings.readoutAriaLabel} className="w-full">
