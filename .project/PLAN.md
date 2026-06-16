@@ -24,8 +24,8 @@ discrete presets become a UI view + snap-on-toggle-off.
 - [x] Slice 2 — ratio → `inhaleShare: number` end-to-end (domain/engines/forms/presentation + v3→v4 migration). (`refactor(settings): model breath ratio as numeric inhaleShare`)
 - [x] Slice 3 — `omLength` → `omSeconds: number` end-to-end (NK engine, bounds 1.0–4.0s); v4 migration converts the omLength label. (`refactor(navikriya): model OM pace as numeric omSeconds`)
 - [x] Slice 4 — `SettingsSlider` primitive (continuous range + nudges, aria). (`feat(settings): add SettingsSlider primitive`)
-- [ ] Slice 5 — forms swap stepper/segmented ↔ slider by `advanced`; Stretch BPM dynamic bounds; advanced-aware coerce snap (deferred from slice 2).
-- [ ] Slice 6 — advanced toggle in Settings → Behavior block + i18n strings.
+- [x] Slice 5 — forms swap stepper/segmented ↔ slider by `advanced` (via `useAdvancedMode`); Stretch BPM dynamic bounds. (`feat(settings): wire advanced sliders into the three forms`)
+- [ ] Slice 6 — advanced toggle in Settings → Behavior block + **toggle-off snap to nearest preset** (Q6, also covers the slice-2 deferral) + i18n strings.
 
 ## Now
 
@@ -33,8 +33,8 @@ discrete presets become a UI view + snap-on-toggle-off.
 build + lint clean. The number model is fully in place: bpm, inhaleShare, and
 omSeconds are all bounded numbers; discrete pickers are a UI view. No sliders yet.
 
-**Next** — Slice 5: wire `advanced` into the three forms (slider vs stepper/segmented),
-Stretch BPM dynamic bounds, advanced-aware coerce snap.
+**Next** — Slice 6: advanced toggle in Settings → Behavior, toggle-off snap to
+nearest preset, i18n strings. This makes the feature live end to end.
 
 **Deferred** — Advanced-aware coerce snap (Q11 "off ⇒ snap to nearest preset"):
 slice 2 coerce only range-validates; real data is preset-valued post-migration,
