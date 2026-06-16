@@ -6,17 +6,23 @@ import {
   NK_OM_SECONDS,
   NK_ROUNDS_OPTIONS,
   OM_LENGTH_OPTIONS,
+  OM_SECONDS_MAX,
+  OM_SECONDS_MIN,
   estimateNaviKriyaDurationMinutes,
+  formatTrimmed,
   type NaviKriyaSettings,
   type OmLength,
 } from '../domain'
 import { SettingsFormShell } from './SettingsFormShell'
 import { SettingsSegmentedRow } from './SettingsSegmentedRow'
+import { SettingsSlider } from './SettingsSlider'
 import { SettingsStepper } from './SettingsStepper'
 import { SettingsToggleRow } from './SettingsToggleRow'
 
 export interface NaviKriyaSettingsFormProps {
   settings: NaviKriyaSettings
+  /** When true, the OM-pace control becomes a continuous seconds-per-OM slider. */
+  advanced?: boolean
   onChange(this: void, settings: NaviKriyaSettings): void
   strings: UiStrings['practice']['settingsForm']
   nkControlsStrings: UiStrings['practice']['nkControls']
@@ -24,6 +30,7 @@ export interface NaviKriyaSettingsFormProps {
 
 export function NaviKriyaSettingsForm({
   settings,
+  advanced = false,
   onChange,
   strings,
   nkControlsStrings,
@@ -34,6 +41,7 @@ export function NaviKriyaSettingsForm({
       : value === 'slow'
         ? nkControlsStrings.omLengthSlow
         : nkControlsStrings.omLengthMedium
+  const formatOmSeconds = (value: number): string => `${formatTrimmed(value)} s`
 
   const updateNkSettings = (next: Partial<NaviKriyaSettings>): void => {
     onChange({ ...settings, ...next })
@@ -57,13 +65,27 @@ export function NaviKriyaSettingsForm({
         onChange={(frontCount) => { updateNkSettings({ frontCount }) }}
         strings={strings.stepper}
       />
-      <SettingsSegmentedRow<number>
-        label={nkControlsStrings.omLengthLabel}
-        ariaLabel={strings.stepper.fieldAriaLabel(nkControlsStrings.omLengthLabel)}
-        value={settings.omSeconds}
-        options={OM_LENGTH_OPTIONS.map((id) => ({ id: NK_OM_SECONDS[id], label: formatOmLength(id) }))}
-        onChange={(omSeconds) => { updateNkSettings({ omSeconds }) }}
-      />
+      {advanced ? (
+        <SettingsSlider
+          label={nkControlsStrings.omLengthLabel}
+          ariaLabel={strings.stepper.fieldAriaLabel(nkControlsStrings.omLengthLabel)}
+          value={settings.omSeconds}
+          min={OM_SECONDS_MIN}
+          max={OM_SECONDS_MAX}
+          nudge={0.05}
+          formatValue={formatOmSeconds}
+          onChange={(omSeconds) => { updateNkSettings({ omSeconds }) }}
+          strings={strings.stepper}
+        />
+      ) : (
+        <SettingsSegmentedRow<number>
+          label={nkControlsStrings.omLengthLabel}
+          ariaLabel={strings.stepper.fieldAriaLabel(nkControlsStrings.omLengthLabel)}
+          value={settings.omSeconds}
+          options={OM_LENGTH_OPTIONS.map((id) => ({ id: NK_OM_SECONDS[id], label: formatOmLength(id) }))}
+          onChange={(omSeconds) => { updateNkSettings({ omSeconds }) }}
+        />
+      )}
       <SettingsToggleRow
         label={nkControlsStrings.perOmCueLabel}
         ariaLabel={nkControlsStrings.perOmCueLabel}

@@ -53,10 +53,14 @@ export const BPM_OPTIONS = [
   7,
 ] as const satisfies readonly number[]
 
-// STRETCH_INITIAL_BPM_OPTIONS: BPM_OPTIONS filtered to >= 1.5 so targetBpm always has
-// at least one valid option below initialBpm (prevents empty targetBpm picker)
+// Floor for the stretch initial BPM so targetBpm always has room below it
+// (prevents an empty targetBpm picker / a zero-span ramp). Also the advanced
+// initial-BPM slider's lower bound.
+export const STRETCH_INITIAL_BPM_MIN = 1.5
+
+// STRETCH_INITIAL_BPM_OPTIONS: BPM_OPTIONS filtered to >= the floor above.
 export const STRETCH_INITIAL_BPM_OPTIONS: readonly number[] = (BPM_OPTIONS as readonly number[]).filter(
-  (v) => v >= 1.5,
+  (v) => v >= STRETCH_INITIAL_BPM_MIN,
 )
 
 // Inhale share (% of cycle) bounds — exhale >= inhale always, so inhale caps at 50 (Q4).
@@ -71,6 +75,11 @@ export const RATIO_INHALE_PRESETS = [50, 40, 30, 20] as const satisfies readonly
 export function formatRatio(inhaleShare: number): string {
   const inhale = Math.round(inhaleShare)
   return `${String(inhale)}:${String(100 - inhale)}`
+}
+
+// Rounds a continuous slider value to 2 decimals and trims trailing zeros for display.
+export function formatTrimmed(value: number): string {
+  return String(Math.round(value * 100) / 100)
 }
 
 export const DURATION_OPTIONS = [

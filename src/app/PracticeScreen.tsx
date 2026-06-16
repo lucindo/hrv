@@ -5,6 +5,7 @@ import { PageShell } from '../components/primitives/PageShell'
 import { TopAppBar } from '../components/primitives/TopAppBar'
 import { PracticeToggle } from '../components/PracticeToggle'
 import { SettingsAnchor } from '../components/SettingsAnchor'
+import { useAdvancedMode } from '../hooks/useAdvancedMode'
 import type { AppViewModel } from './appViewModel'
 import { EndSessionDialogsView } from './EndSessionDialogsView'
 import { PracticeControlsView } from './PracticeControlsView'
@@ -24,6 +25,7 @@ export function PracticeScreen({ vm }: PracticeScreenProps): ReactElement {
   const [settingsSheetOpen, setSettingsSheetOpen] = useState(false)
   const onOpenSettingsSheet = useCallback(() => { setSettingsSheetOpen(true) }, [])
   const onCloseSettingsSheet = useCallback(() => { setSettingsSheetOpen(false) }, [])
+  const advanced = useAdvancedMode()
 
   // Auto-close the sheet on the Idle→in-session edge so the modal backdrop
   // never covers the running orb. The resonant extend-duration affordance
@@ -76,6 +78,7 @@ export function PracticeScreen({ vm }: PracticeScreenProps): ReactElement {
         <PracticeSettingsView
           settings={vm.practiceSettings}
           isSheetOpen={settingsSheetOpen}
+          advanced={advanced}
           onOpenSheet={onOpenSettingsSheet}
           onCloseSheet={onCloseSettingsSheet}
         />

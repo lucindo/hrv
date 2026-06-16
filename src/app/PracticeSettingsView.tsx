@@ -15,6 +15,7 @@ type PracticeSettingsViewModel = AppViewModel['practiceSettings']
 interface PracticeSettingsViewProps {
   settings: PracticeSettingsViewModel
   isSheetOpen: boolean
+  advanced: boolean
   onOpenSheet(this: void): void
   onCloseSheet(this: void): void
 }
@@ -32,6 +33,7 @@ interface PracticeSettingsViewProps {
 export function PracticeSettingsView({
   settings,
   isSheetOpen,
+  advanced,
   onOpenSheet,
   onCloseSheet,
 }: PracticeSettingsViewProps): ReactElement | null {
@@ -59,7 +61,7 @@ export function PracticeSettingsView({
         subtitle={practiceName}
         closeLabel={sheet.close}
       >
-        {isSheetOpen ? renderForm(settings, practice) : null}
+        {isSheetOpen ? renderForm(settings, practice, advanced) : null}
       </SettingsSheet>
     </div>
   )
@@ -68,6 +70,7 @@ export function PracticeSettingsView({
 function renderForm(
   settings: PracticeSettingsViewModel,
   practice: UiStrings['practice'],
+  advanced: boolean,
 ): ReactElement | null {
   if (settings.kind === 'hidden') return null
 
@@ -76,6 +79,7 @@ function renderForm(
       <ResonantSettingsForm
         settings={settings.settings}
         isRunning={settings.isRunning}
+        advanced={advanced}
         onChange={settings.onChange}
         onExtendDuration={settings.onExtendDuration}
         strings={practice.settingsForm}
@@ -87,6 +91,7 @@ function renderForm(
     return (
       <StretchSettingsForm
         isRunning={settings.isRunning}
+        advanced={advanced}
         strings={practice.settingsForm}
         settings={settings.settings}
         onChange={settings.onChange}
@@ -98,6 +103,7 @@ function renderForm(
     <NaviKriyaSettingsForm
       strings={practice.settingsForm}
       settings={settings.settings}
+      advanced={advanced}
       onChange={settings.onChange}
       nkControlsStrings={practice.nkControls}
     />
