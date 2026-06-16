@@ -65,6 +65,7 @@ A pill switcher at the top of the page moves between three practices; each keeps
 - EN / PT-BR language switching — the full interface, including the Learn explainer, is available in English and Brazilian Portuguese.
 - Configurable cue style — `labels` (synchronized In / Out text), `arrow`, or `nose` indicator — picked from the settings panel.
 - Optional generated audio cues — soft bowl-like tones at each phase boundary (mutable), with four selectable timbres (`bowl`, `bell`, `sine`, `flute`).
+- Optional **Precise control** (opt-in, Settings → Behavior) — swaps the fixed pickers for continuous sliders across all three practices: any BPM within 1 – 7, any inhale share down to 10:90, and any Navi OM pace from 1 – 4 s. Turning it off snaps each value back to the nearest preset.
 - 3-2-1 audible + visual lead-in before the timing clock starts.
 - Installable as a Progressive Web App — the production build registers a service worker that caches assets for offline use and auto-updates on revisit. On phones, an inline install banner offers add-to-home-screen, with step-by-step instructions on iOS.
 - Local-only practice stats (sessions completed, total time) — stored in browser localStorage; never sent anywhere.
