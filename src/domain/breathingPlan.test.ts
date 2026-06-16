@@ -3,7 +3,7 @@ import {
   BPM_OPTIONS,
   DEFAULT_SETTINGS,
   DURATION_OPTIONS,
-  RATIO_OPTIONS,
+  RATIO_INHALE_PRESETS,
   validateSettings,
 } from './settings'
 import { createBreathingPlan } from './breathingPlan'
@@ -12,7 +12,7 @@ describe('supported breathing settings', () => {
   it('uses the locked default settings', () => {
     expect(DEFAULT_SETTINGS).toMatchObject({
       bpm: 5.5,
-      ratio: '40:60',
+      inhaleShare: 40,
       durationMinutes: 10,
     })
   })
@@ -23,8 +23,8 @@ describe('supported breathing settings', () => {
     ])
   })
 
-  it('supports only the compact required ratio labels', () => {
-    expect(RATIO_OPTIONS).toEqual(['50:50', '40:60', '30:70', '20:80'])
+  it('supports only the compact required inhale-share presets', () => {
+    expect(RATIO_INHALE_PRESETS).toEqual([50, 40, 30, 20])
   })
 
   it('supports 5 through 60 minute durations plus open-ended', () => {
@@ -49,8 +49,8 @@ describe('supported breathing settings', () => {
     expect(() => validateSettings({ ...DEFAULT_SETTINGS, bpm: 7.5 })).toThrow(
       /Unsupported BPM/,
     )
-    expect(() => validateSettings({ ...DEFAULT_SETTINGS, ratio: '60:40' as never })).toThrow(
-      /Unsupported ratio/,
+    expect(() => validateSettings({ ...DEFAULT_SETTINGS, inhaleShare: 60 })).toThrow(
+      /Unsupported inhaleShare/,
     )
     expect(() => validateSettings({ ...DEFAULT_SETTINGS, durationMinutes: 65 })).toThrow(
       /Unsupported duration/,
@@ -64,9 +64,9 @@ describe('breathing plan math', () => {
     // 4.800000000000001 due to IEEE-754 representation of 0.4 — this FP residue is
     // benign (downstream consumers use toBeCloseTo or Math.floor). Per-field toBeCloseTo
     // asserts structural equivalence without anchoring on exact arithmetic byte representation.
-    const plan = createBreathingPlan({ ...DEFAULT_SETTINGS, bpm: 5, ratio: '40:60', durationMinutes: 10 })
+    const plan = createBreathingPlan({ ...DEFAULT_SETTINGS, bpm: 5, inhaleShare: 40, durationMinutes: 10 })
     expect(plan.bpm).toBe(5)
-    expect(plan.ratio).toBe('40:60')
+    expect(plan.inhaleShare).toBe(40)
     expect(plan.cycleSec).toBeCloseTo(12, 9)
     expect(plan.inhaleSec).toBeCloseTo(4.8, 9)
     expect(plan.exhaleSec).toBeCloseTo(7.2, 9)
@@ -74,6 +74,6 @@ describe('breathing plan math', () => {
   })
 
   it('uses null total duration for open-ended sessions', () => {
-    expect(createBreathingPlan({ ...DEFAULT_SETTINGS, bpm: 5.5, ratio: '50:50', durationMinutes: 'open-ended' }).totalSec).toBeNull()
+    expect(createBreathingPlan({ ...DEFAULT_SETTINGS, bpm: 5.5, inhaleShare: 50, durationMinutes: 'open-ended' }).totalSec).toBeNull()
   })
 })

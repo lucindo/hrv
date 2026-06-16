@@ -16,7 +16,7 @@ import type { SessionSettings } from '../domain/settings'
 import {
   DEFAULT_STRETCH_SETTINGS,
   STRETCH_INITIAL_BPM_OPTIONS,
-  isValidRatio,
+  isValidInhaleShare,
   isValidBpm,
   isValidWarmUp,
   isValidCoolDown,
@@ -130,13 +130,13 @@ export function coerceStretchSettings(raw: unknown): StretchSettings {
     initialBpm = DEFAULT_STRETCH_SETTINGS.initialBpm
     targetBpm  = DEFAULT_STRETCH_SETTINGS.targetBpm
   }
-  // Coerce the start ratio first so a missing/invalid targetRatio can fall back to
-  // the SAME value (FR-13) — a pre-targetRatio persisted slice then behaves exactly
-  // as it did (target == start == no ratio transition).
-  const ratio = isValidRatio(r.ratio) ? r.ratio : DEFAULT_STRETCH_SETTINGS.ratio
+  // Coerce the start share first so a missing/invalid targetInhaleShare can fall
+  // back to the SAME value (FR-13) — a pre-target persisted slice then behaves
+  // exactly as it did (target == start == no ratio transition).
+  const inhaleShare = isValidInhaleShare(r.inhaleShare) ? r.inhaleShare : DEFAULT_STRETCH_SETTINGS.inhaleShare
   return {
-    ratio,
-    targetRatio:         isValidRatio(r.targetRatio)                 ? r.targetRatio         : ratio,
+    inhaleShare,
+    targetInhaleShare:   isValidInhaleShare(r.targetInhaleShare)     ? r.targetInhaleShare   : inhaleShare,
     initialBpm,
     targetBpm,
     warmUpMinutes:       isValidWarmUp(r.warmUpMinutes)              ? r.warmUpMinutes       : DEFAULT_STRETCH_SETTINGS.warmUpMinutes,

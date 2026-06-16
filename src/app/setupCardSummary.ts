@@ -1,6 +1,7 @@
 import type { SetupCardItem } from '../components/SetupCard'
 import type { UiStrings } from '../content/strings'
 import type { OmLength } from '../domain'
+import { formatRatio } from '../domain'
 import type { AppPracticeSettingsViewModel } from './appViewModel'
 
 export interface BuildSetupCardSummaryArgs {
@@ -33,7 +34,7 @@ export function buildSetupCardSummary({
     const s = settings.settings
     return [
       { id: 'bpm', label: f.bpmLabel, value: `${String(s.bpm)} ${f.bpmUnit}` },
-      { id: 'ratio', label: f.ratioLabel, value: s.ratio },
+      { id: 'ratio', label: f.ratioLabel, value: formatRatio(s.inhaleShare) },
       {
         id: 'duration',
         label: f.durationLabel,

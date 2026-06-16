@@ -71,11 +71,11 @@ export function startStretchSession(
   selectedSettings: SessionSettings,
   nowSec: number,
 ): RunningSessionState {
-  // Lead-in plan: standard SessionSettings using initialBpm and the same ratio.
+  // Lead-in plan: standard SessionSettings using initialBpm and the same inhale share.
   // Assigned only to lockedSettings — selectedSettings is the caller's resonant config.
   const leadInSettings: SessionSettings = {
     bpm: stretchSettings.initialBpm,
-    ratio: stretchSettings.ratio,
+    inhaleShare: stretchSettings.inhaleShare,
     durationMinutes: 'open-ended',
   }
   const plan = createBreathingPlan(leadInSettings)

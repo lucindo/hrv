@@ -13,7 +13,7 @@ import { useAudioCues } from './useAudioCues'
 // BreathingPlan fixture is seconds-shaped.
 const samplePlan: BreathingPlan = {
   bpm: 5.5,
-  ratio: '40:60',
+  inhaleShare: 40,
   cycleSec: 60 / 5.5,
   inhaleSec: (60 / 5.5) * 0.4,
   exhaleSec: (60 / 5.5) * 0.6,

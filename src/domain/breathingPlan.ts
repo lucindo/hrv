@@ -1,9 +1,9 @@
-import type { RatioLabel, SessionSettings } from './settings'
-import { RATIO_PARTS, validateSettings } from './settings'
+import type { SessionSettings } from './settings'
+import { validateSettings } from './settings'
 
 export interface BreathingPlan {
   readonly bpm: number
-  readonly ratio: RatioLabel
+  readonly inhaleShare: number
   readonly cycleSec: number
   readonly inhaleSec: number
   readonly exhaleSec: number
@@ -14,10 +14,10 @@ const SEC_PER_MINUTE = 60
 
 export function createBreathingPlan(settings: SessionSettings): BreathingPlan {
   const validSettings = validateSettings(settings)
-  const ratio = RATIO_PARTS[validSettings.ratio]
+  const inhaleShare = validSettings.inhaleShare
   const cycleSec = SEC_PER_MINUTE / validSettings.bpm
-  const inhaleSec = cycleSec * (ratio.inhale / 100)
-  const exhaleSec = cycleSec * (ratio.exhale / 100)
+  const inhaleSec = cycleSec * (inhaleShare / 100)
+  const exhaleSec = cycleSec * ((100 - inhaleShare) / 100)
   const totalSec =
     validSettings.durationMinutes === 'open-ended'
       ? null
@@ -25,7 +25,7 @@ export function createBreathingPlan(settings: SessionSettings): BreathingPlan {
 
   return {
     bpm: validSettings.bpm,
-    ratio: validSettings.ratio,
+    inhaleShare,
     cycleSec,
     inhaleSec,
     exhaleSec,

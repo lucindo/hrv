@@ -1,4 +1,3 @@
-export type RatioLabel = '50:50' | '40:60' | '30:70' | '20:80'
 export type DurationOption = number | 'open-ended'
 
 // Stretch stage durations are minute-based: Warm-up (initial-BPM hold), Ramp
@@ -14,18 +13,18 @@ export const COOLDOWN_OPTIONS = [2, 3, 4, 5, 10, 15, 20, 25, 30, 'open-ended'] a
 
 export const RAMP_DURATION_OPTIONS = [2, 3, 4, 5, 10] as const satisfies readonly number[]
 
-// SessionSettings is standard-only — 3 fields (bpm, ratio, durationMinutes).
+// SessionSettings is standard-only — 3 fields (bpm, inhaleShare, durationMinutes).
 export interface SessionSettings {
   bpm: number
-  ratio: RatioLabel
+  inhaleShare: number
   durationMinutes: DurationOption
 }
 
-// StretchSettings is a standalone type — ratio + the five ramp fields.
+// StretchSettings is a standalone type — start/target inhale share + the five ramp fields.
 // durationMinutes is NOT stored here (it is computed from the ramp table).
 export interface StretchSettings {
-  ratio: RatioLabel
-  targetRatio: RatioLabel
+  inhaleShare: number
+  targetInhaleShare: number
   initialBpm: number
   targetBpm: number
   warmUpMinutes: WarmUpMinutes
@@ -60,15 +59,18 @@ export const STRETCH_INITIAL_BPM_OPTIONS: readonly number[] = (BPM_OPTIONS as re
   (v) => v >= 1.5,
 )
 
-export const RATIO_OPTIONS = ['50:50', '40:60', '30:70', '20:80'] as const satisfies readonly RatioLabel[]
+// Inhale share (% of cycle) bounds — exhale >= inhale always, so inhale caps at 50 (Q4).
+export const INHALE_MIN = 10
+export const INHALE_MAX = 50
 
-// Inhale/exhale split (percent of cycle) for each ratio. Single source of truth —
-// consumed by createBreathingPlan and buildStretchSegments.
-export const RATIO_PARTS: Record<RatioLabel, { readonly inhale: number; readonly exhale: number }> = {
-  '50:50': { inhale: 50, exhale: 50 },
-  '40:60': { inhale: 40, exhale: 60 },
-  '30:70': { inhale: 30, exhale: 70 },
-  '20:80': { inhale: 20, exhale: 80 },
+// Discrete inhale-share presets shown when advanced is off (the former 50:50…20:80
+// RatioLabel set). exhale% is always 100 - inhale%.
+export const RATIO_INHALE_PRESETS = [50, 40, 30, 20] as const satisfies readonly number[]
+
+// Formats an inhale share as the familiar "inhale:exhale" label, integer-rounded.
+export function formatRatio(inhaleShare: number): string {
+  const inhale = Math.round(inhaleShare)
+  return `${String(inhale)}:${String(100 - inhale)}`
 }
 
 export const DURATION_OPTIONS = [
@@ -89,7 +91,7 @@ export const DURATION_OPTIONS = [
 
 export const DEFAULT_SETTINGS: SessionSettings = {
   bpm: 5.5,
-  ratio: '40:60',
+  inhaleShare: 40,
   durationMinutes: 10,
 }
 
@@ -97,8 +99,8 @@ export const DEFAULT_SETTINGS: SessionSettings = {
 // storage coercer. Warm-up 5 + Ramp 5 + Cool-down 5 = 15-minute computed total.
 // ratio is consumed by buildStretchSegments internally.
 export const DEFAULT_STRETCH_SETTINGS: StretchSettings = {
-  ratio: '40:60',
-  targetRatio: '40:60',
+  inhaleShare: 40,
+  targetInhaleShare: 40,
   initialBpm: 5.5,
   targetBpm: 4.5,
   warmUpMinutes: 5,
@@ -190,8 +192,8 @@ export function isValidBpm(v: unknown): v is number {
   return typeof v === 'number' && Number.isFinite(v) && v >= BPM_MIN && v <= BPM_MAX
 }
 
-export function isValidRatio(v: unknown): v is RatioLabel {
-  return typeof v === 'string' && (RATIO_OPTIONS as readonly string[]).includes(v)
+export function isValidInhaleShare(v: unknown): v is number {
+  return typeof v === 'number' && Number.isFinite(v) && v >= INHALE_MIN && v <= INHALE_MAX
 }
 
 export function isValidDuration(v: unknown): v is DurationOption {
@@ -226,14 +228,8 @@ export function validateSettings(settings: SessionSettings): SessionSettings {
     throw new RangeError(`Unsupported BPM: ${String(settings.bpm)}`)
   }
 
-  if (!isValidRatio(settings.ratio)) {
-    // Reason: the user-defined predicate `isValidRatio: (v: unknown): v is RatioLabel`
-    // narrows `settings.ratio: RatioLabel` to `never` in the false branch. `${settings.ratio}`
-    // Reason: the user-defined predicate `isValidRatio: (v: unknown): v is RatioLabel`
-    // narrows `settings.ratio: RatioLabel` to `never` in the false branch. `${settings.ratio}`
-    // is preserved verbatim so the runtime string remains correct.
-    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-    throw new RangeError(`Unsupported ratio: ${settings.ratio}`)
+  if (!isValidInhaleShare(settings.inhaleShare)) {
+    throw new RangeError(`Unsupported inhaleShare: ${String(settings.inhaleShare)}`)
   }
 
   if (!isValidDuration(settings.durationMinutes)) {
@@ -245,19 +241,14 @@ export function validateSettings(settings: SessionSettings): SessionSettings {
 
 // validateStretchSettings receives a StretchSettings (not SessionSettings).
 export function validateStretchSettings(settings: StretchSettings): StretchSettings {
-  if (!isValidRatio(settings.ratio)) {
-    // Reason: the user-defined predicate `isValidRatio: (v: unknown): v is RatioLabel`
-    // narrows `settings.ratio: RatioLabel` to `never` in the false branch. `${settings.ratio}`
-    // is preserved verbatim so the runtime string remains correct.
-    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-    throw new RangeError(`Unsupported ratio: ${settings.ratio}`)
+  if (!isValidInhaleShare(settings.inhaleShare)) {
+    throw new RangeError(`Unsupported inhaleShare: ${String(settings.inhaleShare)}`)
   }
 
-  // targetRatio has no ordering constraint relative to the start ratio — it may
-  // carry more, less, or equal inhale weight. Only the label itself is validated.
-  if (!isValidRatio(settings.targetRatio)) {
-    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-    throw new RangeError(`Unsupported targetRatio: ${settings.targetRatio}`)
+  // targetInhaleShare has no ordering constraint relative to the start share — it
+  // may carry more, less, or equal inhale weight. Only the range is validated.
+  if (!isValidInhaleShare(settings.targetInhaleShare)) {
+    throw new RangeError(`Unsupported targetInhaleShare: ${String(settings.targetInhaleShare)}`)
   }
 
   if (!isValidBpm(settings.initialBpm)) {

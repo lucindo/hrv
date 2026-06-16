@@ -9,7 +9,7 @@ import type { StretchSegment } from './stretchRamp'
 // Fixture values are seconds-shaped.
 const plan: BreathingPlan = {
   bpm: 5.5,
-  ratio: '40:60',
+  inhaleShare: 40,
   cycleSec: 10.909,
   inhaleSec: 4.363,
   exhaleSec: 6.545,
@@ -31,7 +31,7 @@ const baseFrame: SessionFrame = {
 // HRV fixture plan: 10 BPM (cycleSec=6, inhale=3, exhale=3)
 const hrvPlan: BreathingPlan = {
   bpm: 10,
-  ratio: '50:50',
+  inhaleShare: 50,
   cycleSec: 6,
   inhaleSec: 3,
   exhaleSec: 3,
@@ -97,7 +97,7 @@ describe('Phase 52 D-01/D-11/D-14 walkFutureCues', () => {
   it('HRV low-BPM floor: 1 BPM returns exactly LOOKAHEAD_MIN_CUES cues', () => {
     const lowBpmPlan: BreathingPlan = {
       bpm: 1,
-      ratio: '40:60',
+      inhaleShare: 40,
       cycleSec: 60,
       inhaleSec: 24,
       exhaleSec: 36,
@@ -123,7 +123,7 @@ describe('Phase 52 D-01/D-11/D-14 walkFutureCues', () => {
   it('HRV high-BPM: no duplicate cues, monotonically increasing audioTimes', () => {
     const highBpmPlan: BreathingPlan = {
       bpm: 7,
-      ratio: '40:60',
+      inhaleShare: 40,
       cycleSec: 60 / 7,
       inhaleSec: (60 / 7) * 0.4,
       exhaleSec: (60 / 7) * 0.6,
@@ -161,7 +161,7 @@ describe('Phase 52 D-01/D-11/D-14 walkFutureCues', () => {
       elapsedSec: 27,  // currently at cycle 4 exhale
       fromCycleIndex: 4,
       fromPhase: 'out',
-      plan: { bpm: 10, ratio: '50:50', cycleSec: 6, inhaleSec: 3, exhaleSec: 3, totalSec: null },
+      plan: { bpm: 10, inhaleShare: 50, cycleSec: 6, inhaleSec: 3, exhaleSec: 3, totalSec: null },
       segments: stretchSegs,
       lookaheadWindowSec: LOOKAHEAD_WINDOW_SEC,
       minCues: LOOKAHEAD_MIN_CUES,
@@ -185,7 +185,7 @@ describe('Phase 52 D-01/D-11/D-14 walkFutureCues', () => {
       elapsedSec: 40,  // deep in the open-ended second segment (startSec=30, Infinity)
       fromCycleIndex: 6,
       fromPhase: 'in',
-      plan: { bpm: 6, ratio: '40:60', cycleSec: 10, inhaleSec: 4, exhaleSec: 6, totalSec: null },
+      plan: { bpm: 6, inhaleShare: 40, cycleSec: 10, inhaleSec: 4, exhaleSec: 6, totalSec: null },
       segments: stretchSegs,
       lookaheadWindowSec: LOOKAHEAD_WINDOW_SEC,
       minCues: LOOKAHEAD_MIN_CUES,
@@ -286,7 +286,7 @@ describe('Phase 52 D-01/D-11/D-14 walkFutureCues', () => {
       elapsedSec: 24,  // cycle 4, inhale (4*6=24)
       fromCycleIndex: 4,
       fromPhase: 'in',
-      plan: { bpm: 10, ratio: '50:50', cycleSec: 6, inhaleSec: 3, exhaleSec: 3, totalSec: null },
+      plan: { bpm: 10, inhaleShare: 50, cycleSec: 6, inhaleSec: 3, exhaleSec: 3, totalSec: null },
       segments: stretchSegs,
       lookaheadWindowSec: LOOKAHEAD_WINDOW_SEC,
       minCues: LOOKAHEAD_MIN_CUES,
@@ -317,7 +317,7 @@ describe('session-end boundary trim: held-open final breath plays, no end-chord 
   it('HRV: final held-open exhale plays, inhale at the completion boundary is dropped', () => {
     const nonAlignedPlan: BreathingPlan = {
       bpm: 60 / 14,
-      ratio: '50:50',
+      inhaleShare: 50,
       cycleSec: 14,
       inhaleSec: 7,
       exhaleSec: 7,
@@ -389,7 +389,7 @@ describe('session-end boundary trim: held-open final breath plays, no end-chord 
 describe('resolveTargetSec', () => {
   it('HRV timed: returns the rounded completion boundary, not the raw totalSec', () => {
     // 14s cycle, 300s total → ceil(300/14)*14 = 308 (held-open final cycle).
-    const plan: BreathingPlan = { bpm: 60 / 14, ratio: '50:50', cycleSec: 14, inhaleSec: 7, exhaleSec: 7, totalSec: 300 }
+    const plan: BreathingPlan = { bpm: 60 / 14, inhaleShare: 50, cycleSec: 14, inhaleSec: 7, exhaleSec: 7, totalSec: 300 }
     expect(resolveTargetSec(plan, undefined)).toBe(308)
   })
 
@@ -415,7 +415,7 @@ describe('resolveTargetSec', () => {
     // A timed resonant plan AND stretch segments: the trim must use the segment end
     // (25), NOT the resonant plan.totalSec (300). Reverting to plan.totalSec here is
     // exactly what silenced a stretch session's final minutes.
-    const timedResonant: BreathingPlan = { bpm: 6, ratio: '50:50', cycleSec: 10, inhaleSec: 5, exhaleSec: 5, totalSec: 300 }
+    const timedResonant: BreathingPlan = { bpm: 6, inhaleShare: 50, cycleSec: 10, inhaleSec: 5, exhaleSec: 5, totalSec: 300 }
     const segs: StretchSegment[] = [
       { startSec: 0, endSec: 25, bpm: 6, cycleSec: 10, inhaleSec: 4, exhaleSec: 6, stage: 'hold-target', cycleBaseIndex: 0 },
     ]
@@ -435,7 +435,7 @@ describe('Phase 52 Plan 06 WR-01: walkFutureCues hard iteration cap', () => {
     // Without the cap this hangs the rAF tick. With the cap it returns in ≤ MAX_WALK_ITERATIONS.
     const degeneratePlan: BreathingPlan = {
       bpm: 1,
-      ratio: '50:50',
+      inhaleShare: 50,
       cycleSec: 1e-9,  // near-zero positive — passes cycleSec > 0 guard
       inhaleSec: 0,
       exhaleSec: 0,
@@ -468,7 +468,7 @@ describe('Phase 52 Plan 06 WR-01: walkFutureCues hard iteration cap', () => {
     // The cap must NOT affect normal operation (10 BPM, window=6s produces ~3 cues).
     const normalPlan: BreathingPlan = {
       bpm: 10,
-      ratio: '50:50',
+      inhaleShare: 50,
       cycleSec: 6,
       inhaleSec: 3,
       exhaleSec: 3,

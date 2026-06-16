@@ -14,7 +14,7 @@ import {
 const baseSettings: SessionSettings = {
   ...DEFAULT_SETTINGS,
   bpm: 5.5,
-  ratio: '40:60',
+  inhaleShare: 40,
   durationMinutes: 10,
 }
 
@@ -26,12 +26,12 @@ describe('session lifecycle controller', () => {
     const running = startSession(selectedSettings, 1)
 
     selectedSettings.bpm = 7
-    selectedSettings.ratio = '20:80'
+    selectedSettings.inhaleShare = 20
     selectedSettings.durationMinutes = 60
 
     expect(running.lockedSettings).toEqual(baseSettings)
     expect(running.plan.bpm).toBe(5.5)
-    expect(running.plan.ratio).toBe('40:60')
+    expect(running.plan.inhaleShare).toBe(40)
     expect(running.startedAtSec).toBe(1)
     expect(running.lastFrame.phaseLabel).toBe('In')
   })
@@ -122,8 +122,8 @@ describe('startSession standard-only (D-01)', () => {
 
 describe('startStretchSession (D-01, D-02)', () => {
   const stretchSettings: StretchSettings = {
-    ratio: '40:60',
-    targetRatio: '40:60',
+    inhaleShare: 40,
+    targetInhaleShare: 40,
     initialBpm: 6,
     targetBpm: 4,
     warmUpMinutes: 10,
@@ -134,7 +134,7 @@ describe('startStretchSession (D-01, D-02)', () => {
   const resonantSettings: SessionSettings = {
     ...DEFAULT_SETTINGS,
     bpm: 5.5,
-    ratio: '40:60',
+    inhaleShare: 40,
     durationMinutes: 20,
   }
 
@@ -219,8 +219,8 @@ describe('startStretchSession (D-01, D-02)', () => {
 describe('extendTimedSession — no mode check (D-01)', () => {
   it('throws RangeError for a stretch session (stretchSegments !== null gate)', () => {
     const stretchSettings: StretchSettings = {
-      ratio: '40:60',
-      targetRatio: '40:60',
+      inhaleShare: 40,
+      targetInhaleShare: 40,
       initialBpm: 6,
       targetBpm: 4,
       warmUpMinutes: 10,

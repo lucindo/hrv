@@ -355,8 +355,8 @@ describe('coerceStretchSettings (Phase 34 T-34-02)', () => {
 
   it('preserves a fully valid StretchSettings object', () => {
     const valid: StretchSettings = {
-      ratio: '30:70',
-      targetRatio: '30:70',
+      inhaleShare: 30,
+      targetInhaleShare: 30,
       initialBpm: 6,
       targetBpm: 4,
       warmUpMinutes: 10,
@@ -369,7 +369,7 @@ describe('coerceStretchSettings (Phase 34 T-34-02)', () => {
   it('falls back per-field — one drifted field does not discard the rest', () => {
     // initialBpm: 'x' is invalid; all other fields are valid
     const result = coerceStretchSettings({
-      ratio: '30:70',
+      inhaleShare: 30,
       initialBpm: 'x',   // drifted
       targetBpm: 4,
       warmUpMinutes: 10,
@@ -377,44 +377,44 @@ describe('coerceStretchSettings (Phase 34 T-34-02)', () => {
       coolDownMinutes: 10,
     })
     expect(result.initialBpm).toBe(DEFAULT_STRETCH_SETTINGS.initialBpm)
-    expect(result.ratio).toBe('30:70')
+    expect(result.inhaleShare).toBe(30)
     expect(result.targetBpm).toBe(4)
     expect(result.warmUpMinutes).toBe(10)
     expect(result.rampDurationMinutes).toBe(10)
     expect(result.coolDownMinutes).toBe(10)
   })
 
-  it('falls back a missing targetRatio to the coerced start ratio (FR-13 backward-compat)', () => {
-    // A pre-targetRatio persisted slice has no targetRatio key — it must adopt the
-    // (coerced) start ratio so the session behaves exactly as it did before.
+  it('falls back a missing targetInhaleShare to the coerced start share (FR-13 backward-compat)', () => {
+    // A pre-target persisted slice has no targetInhaleShare key — it must adopt the
+    // (coerced) start share so the session behaves exactly as it did before.
     const result = coerceStretchSettings({
-      ratio: '30:70',
+      inhaleShare: 30,
       initialBpm: 6,
       targetBpm: 4,
       warmUpMinutes: 10,
       rampDurationMinutes: 10,
       coolDownMinutes: 10,
     })
-    expect(result.targetRatio).toBe('30:70')
+    expect(result.targetInhaleShare).toBe(30)
   })
 
-  it('falls back an invalid targetRatio to the coerced start ratio (FR-13)', () => {
+  it('falls back an invalid targetInhaleShare to the coerced start share (FR-13)', () => {
     const result = coerceStretchSettings({
-      ratio: '20:80',
-      targetRatio: 'garbage',
+      inhaleShare: 20,
+      targetInhaleShare: 'garbage',
       initialBpm: 6,
       targetBpm: 4,
       warmUpMinutes: 10,
       rampDurationMinutes: 10,
       coolDownMinutes: 10,
     })
-    expect(result.targetRatio).toBe('20:80')
+    expect(result.targetInhaleShare).toBe(20)
   })
 
   it('coerces a removed phase value (warmUp 15, ramp 20) to the default (FR-4)', () => {
     const result = coerceStretchSettings({
-      ratio: '40:60',
-      targetRatio: '40:60',
+      inhaleShare: 40,
+      targetInhaleShare: 40,
       initialBpm: 6,
       targetBpm: 4,
       warmUpMinutes: 15,  // no longer an option
@@ -438,7 +438,7 @@ describe('coerceStretchSettings (Phase 34 T-34-02)', () => {
   // CR-01 regression: cross-field invariant enforcement
   it('CR-01: resets BOTH BPM fields to defaults when targetBpm > initialBpm (inverted ramp)', () => {
     // A persisted slice where targetBpm > initialBpm would silently produce an inverted ramp
-    const result = coerceStretchSettings({ initialBpm: 4, targetBpm: 5, ratio: '40:60', warmUpMinutes: 5, rampDurationMinutes: 5, coolDownMinutes: 5 })
+    const result = coerceStretchSettings({ initialBpm: 4, targetBpm: 5, inhaleShare: 40, warmUpMinutes: 5, rampDurationMinutes: 5, coolDownMinutes: 5 })
     expect(result.initialBpm).toBe(DEFAULT_STRETCH_SETTINGS.initialBpm)
     expect(result.targetBpm).toBe(DEFAULT_STRETCH_SETTINGS.targetBpm)
     // The invariant must hold after coercion
@@ -447,7 +447,7 @@ describe('coerceStretchSettings (Phase 34 T-34-02)', () => {
 
   it('CR-01: resets BOTH BPM fields to defaults when targetBpm === initialBpm (equal — not a down ramp)', () => {
     // An equal-BPM slice is also invalid — the ramp span is zero
-    const result = coerceStretchSettings({ initialBpm: 4, targetBpm: 4, ratio: '40:60', warmUpMinutes: 5, rampDurationMinutes: 5, coolDownMinutes: 5 })
+    const result = coerceStretchSettings({ initialBpm: 4, targetBpm: 4, inhaleShare: 40, warmUpMinutes: 5, rampDurationMinutes: 5, coolDownMinutes: 5 })
     expect(result.initialBpm).toBe(DEFAULT_STRETCH_SETTINGS.initialBpm)
     expect(result.targetBpm).toBe(DEFAULT_STRETCH_SETTINGS.targetBpm)
   })
@@ -455,25 +455,25 @@ describe('coerceStretchSettings (Phase 34 T-34-02)', () => {
   it('CR-01: resets initialBpm to default when raw initialBpm is 1 (valid in BPM_OPTIONS but not STRETCH_INITIAL_BPM_OPTIONS)', () => {
     // initialBpm: 1 is in BPM_OPTIONS but not STRETCH_INITIAL_BPM_OPTIONS (< 1.5).
     // A coerced initialBpm of 1 would collapse the targetBpm picker to an empty list.
-    const result = coerceStretchSettings({ initialBpm: 1, targetBpm: 0.5, ratio: '40:60', warmUpMinutes: 5, rampDurationMinutes: 5, coolDownMinutes: 5 })
+    const result = coerceStretchSettings({ initialBpm: 1, targetBpm: 0.5, inhaleShare: 40, warmUpMinutes: 5, rampDurationMinutes: 5, coolDownMinutes: 5 })
     expect(result.initialBpm).toBe(DEFAULT_STRETCH_SETTINGS.initialBpm)
   })
 
   it('CR-01: a fully-valid down-ramp with STRETCH_INITIAL_BPM_OPTIONS initialBpm is returned unchanged', () => {
     // Regression: valid slices must not be affected by the new cross-field check
-    const valid = { ratio: '30:70' as const, initialBpm: 6, targetBpm: 4.5, warmUpMinutes: 10, rampDurationMinutes: 10, coolDownMinutes: 10 }
+    const valid = { inhaleShare: 30, initialBpm: 6, targetBpm: 4.5, warmUpMinutes: 10, rampDurationMinutes: 10, coolDownMinutes: 10 }
     const result = coerceStretchSettings(valid)
     expect(result.initialBpm).toBe(6)
     expect(result.targetBpm).toBe(4.5)
-    expect(result.ratio).toBe('30:70')
+    expect(result.inhaleShare).toBe(30)
   })
 })
 
 describe('saveStretchSettings / loadPractices round-trip (Phase 34 T-34-02)', () => {
   it('saveStretchSettings → loadPractices().stretch.settings round-trips the value', () => {
     const settings: StretchSettings = {
-      ratio: '30:70',
-      targetRatio: '30:70',
+      inhaleShare: 30,
+      targetInhaleShare: 30,
       initialBpm: 6,
       targetBpm: 4.5,
       warmUpMinutes: 10,

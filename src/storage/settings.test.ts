@@ -33,38 +33,38 @@ describe('coerceSettings (D-15)', () => {
   })
 
   it('preserves all valid fields verbatim', () => {
-    const valid: SessionSettings = { ...DEFAULT_SETTINGS, bpm: 4, ratio: '50:50', durationMinutes: 5 }
+    const valid: SessionSettings = { ...DEFAULT_SETTINGS, bpm: 4, inhaleShare: 50, durationMinutes: 5 }
     expect(coerceSettings(valid)).toEqual(valid)
   })
 
   it('accepts open-ended duration', () => {
-    expect(coerceSettings({ bpm: 5.5, ratio: '40:60', durationMinutes: 'open-ended' }))
-      .toMatchObject({ bpm: 5.5, ratio: '40:60', durationMinutes: 'open-ended' })
+    expect(coerceSettings({ bpm: 5.5, inhaleShare: 40, durationMinutes: 'open-ended' }))
+      .toMatchObject({ bpm: 5.5, inhaleShare: 40, durationMinutes: 'open-ended' })
   })
 
-  it('falls back PER FIELD when bpm is invalid (D-15) — keeps ratio + duration', () => {
-    expect(coerceSettings({ bpm: 99, ratio: '50:50', durationMinutes: 5 }))
-      .toMatchObject({ bpm: DEFAULT_SETTINGS.bpm, ratio: '50:50', durationMinutes: 5 })
+  it('falls back PER FIELD when bpm is invalid (D-15) — keeps inhaleShare + duration', () => {
+    expect(coerceSettings({ bpm: 99, inhaleShare: 50, durationMinutes: 5 }))
+      .toMatchObject({ bpm: DEFAULT_SETTINGS.bpm, inhaleShare: 50, durationMinutes: 5 })
   })
 
-  it('falls back PER FIELD when ratio is invalid (D-15) — keeps bpm + duration', () => {
-    expect(coerceSettings({ bpm: 4, ratio: '11:22', durationMinutes: 5 }))
-      .toMatchObject({ bpm: 4, ratio: DEFAULT_SETTINGS.ratio, durationMinutes: 5 })
+  it('falls back PER FIELD when inhaleShare is invalid (D-15) — keeps bpm + duration', () => {
+    expect(coerceSettings({ bpm: 4, inhaleShare: 99, durationMinutes: 5 }))
+      .toMatchObject({ bpm: 4, inhaleShare: DEFAULT_SETTINGS.inhaleShare, durationMinutes: 5 })
   })
 
-  it('falls back PER FIELD when duration is invalid (D-15) — keeps bpm + ratio', () => {
-    expect(coerceSettings({ bpm: 4, ratio: '50:50', durationMinutes: 7 }))
-      .toMatchObject({ bpm: 4, ratio: '50:50', durationMinutes: DEFAULT_SETTINGS.durationMinutes })
+  it('falls back PER FIELD when duration is invalid (D-15) — keeps bpm + inhaleShare', () => {
+    expect(coerceSettings({ bpm: 4, inhaleShare: 50, durationMinutes: 7 }))
+      .toMatchObject({ bpm: 4, inhaleShare: 50, durationMinutes: DEFAULT_SETTINGS.durationMinutes })
   })
 
   it('rejects bpm of wrong type (string) and falls back', () => {
-    expect(coerceSettings({ bpm: '5.5', ratio: '40:60', durationMinutes: 10 }))
-      .toMatchObject({ bpm: DEFAULT_SETTINGS.bpm, ratio: '40:60', durationMinutes: 10 })
+    expect(coerceSettings({ bpm: '5.5', inhaleShare: 40, durationMinutes: 10 }))
+      .toMatchObject({ bpm: DEFAULT_SETTINGS.bpm, inhaleShare: 40, durationMinutes: 10 })
   })
 
   it('rejects bpm = NaN / Infinity', () => {
-    expect(coerceSettings({ bpm: NaN, ratio: '40:60', durationMinutes: 10 }).bpm).toBe(DEFAULT_SETTINGS.bpm)
-    expect(coerceSettings({ bpm: Infinity, ratio: '40:60', durationMinutes: 10 }).bpm).toBe(DEFAULT_SETTINGS.bpm)
+    expect(coerceSettings({ bpm: NaN, inhaleShare: 40, durationMinutes: 10 }).bpm).toBe(DEFAULT_SETTINGS.bpm)
+    expect(coerceSettings({ bpm: Infinity, inhaleShare: 40, durationMinutes: 10 }).bpm).toBe(DEFAULT_SETTINGS.bpm)
   })
 
   it('does not throw when raw has prototype-polluting keys (T-04-02 mitigation)', () => {
@@ -79,11 +79,11 @@ describe('coerceSettings (D-15)', () => {
 
   // coerceSettings is standard-only (3 fields). Stretch ramp fields (mode, initialBpm,
   // targetBpm, warmUpMinutes, coolDownMinutes, rampDurationMinutes) live in coerceStretchSettings.
-  it('returns exactly { bpm, ratio, durationMinutes } — no mode or ramp fields present', () => {
+  it('returns exactly { bpm, inhaleShare, durationMinutes } — no mode or ramp fields present', () => {
     // A raw blob carrying old stretch fields should produce only the 3 standard fields.
     const rawWithRampFields = {
       bpm: 5.5,
-      ratio: '40:60',
+      inhaleShare: 40,
       durationMinutes: 10,
       mode: 'stretch',
       initialBpm: 6,
@@ -94,9 +94,9 @@ describe('coerceSettings (D-15)', () => {
     }
     const result = coerceSettings(rawWithRampFields)
     // Only the 3 standard keys must be present.
-    expect(Object.keys(result).sort()).toEqual(['bpm', 'durationMinutes', 'ratio'])
+    expect(Object.keys(result).sort()).toEqual(['bpm', 'durationMinutes', 'inhaleShare'])
     expect(result.bpm).toBe(5.5)
-    expect(result.ratio).toBe('40:60')
+    expect(result.inhaleShare).toBe(40)
     expect(result.durationMinutes).toBe(10)
     // Drifted/extra fields must NOT appear on the result.
     const asAny = result as unknown as Record<string, unknown>
@@ -129,14 +129,14 @@ describe('loadMute / saveMute round-trip', () => {
   })
 
   it('preserves resonant settings + mute when saving mute (envelope merge)', () => {
-    saveResonantSettings({ ...DEFAULT_SETTINGS, bpm: 4, ratio: '40:60', durationMinutes: 5 })
+    saveResonantSettings({ ...DEFAULT_SETTINGS, bpm: 4, inhaleShare: 40, durationMinutes: 5 })
     saveMute(true)
     // Reason: STATE_KEY is always present after saveMute; non-null asserted by storage contract.
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const raw = JSON.parse(window.localStorage.getItem(STATE_KEY)!) as Record<string, unknown>
     const practices = raw['practices'] as Record<string, unknown> | undefined
     const resonant = practices?.['resonant'] as Record<string, unknown> | undefined
-    expect(resonant?.['settings']).toMatchObject({ bpm: 4, ratio: '40:60', durationMinutes: 5 })
+    expect(resonant?.['settings']).toMatchObject({ bpm: 4, inhaleShare: 40, durationMinutes: 5 })
     expect(raw).toMatchObject({ mute: true })
   })
 })

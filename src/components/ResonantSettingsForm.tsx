@@ -4,10 +4,10 @@ import type { UiStrings } from '../content/strings'
 import {
   BPM_OPTIONS,
   DURATION_OPTIONS,
-  RATIO_OPTIONS,
+  RATIO_INHALE_PRESETS,
+  formatRatio,
   getNextDurationOption,
   type DurationOption,
-  type RatioLabel,
   type SessionSettings,
 } from '../domain'
 import { SettingsFormShell } from './SettingsFormShell'
@@ -62,12 +62,12 @@ export function ResonantSettingsForm({
             onChange={(bpm) => { updateSettings({ bpm }) }}
             strings={strings.stepper}
           />
-          <SettingsSegmentedRow<RatioLabel>
+          <SettingsSegmentedRow<number>
             label={strings.ratioLabel}
             ariaLabel={strings.stepper.fieldAriaLabel(strings.ratioLabel)}
-            value={settings.ratio}
-            options={RATIO_OPTIONS.map((id) => ({ id, label: id }))}
-            onChange={(ratio) => { updateSettings({ ratio }) }}
+            value={settings.inhaleShare}
+            options={RATIO_INHALE_PRESETS.map((id) => ({ id, label: formatRatio(id) }))}
+            onChange={(inhaleShare) => { updateSettings({ inhaleShare }) }}
           />
         </>
       )}

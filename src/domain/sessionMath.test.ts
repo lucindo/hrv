@@ -3,8 +3,8 @@ import { createBreathingPlan } from './breathingPlan'
 import { getCompletionSec, getSessionFrame, formatDuration } from './sessionMath'
 import { DEFAULT_SETTINGS } from './settings'
 
-const timedPlan = createBreathingPlan({ ...DEFAULT_SETTINGS, bpm: 5, ratio: '40:60', durationMinutes: 10 })
-const openEndedPlan = createBreathingPlan({ ...DEFAULT_SETTINGS, bpm: 5, ratio: '40:60', durationMinutes: 'open-ended' })
+const timedPlan = createBreathingPlan({ ...DEFAULT_SETTINGS, bpm: 5, inhaleShare: 40, durationMinutes: 10 })
+const openEndedPlan = createBreathingPlan({ ...DEFAULT_SETTINGS, bpm: 5, inhaleShare: 40, durationMinutes: 'open-ended' })
 
 describe('session frame derivation', () => {
   it('starts in the In phase with zero progress and cycle index zero', () => {
@@ -58,7 +58,7 @@ describe('session frame derivation', () => {
   // and the orb finish their In/Out before transitioning to 'complete'.
   it('holds completion until the current cycle finishes when total duration falls mid-cycle', () => {
     // bpm 5.5 → cycle ≈ 10.909 sec; 5 min total → 27.5 cycles (mid-cycle).
-    const offsetPlan = createBreathingPlan({ ...DEFAULT_SETTINGS, bpm: 5.5, ratio: '40:60', durationMinutes: 5 })
+    const offsetPlan = createBreathingPlan({ ...DEFAULT_SETTINGS, bpm: 5.5, inhaleShare: 40, durationMinutes: 5 })
     const cycleSec = offsetPlan.cycleSec
     const cycleEnd = Math.ceil(300 / cycleSec) * cycleSec
 
@@ -87,13 +87,13 @@ describe('getCompletionSec', () => {
   it('rounds the configured total UP to the next cycle boundary (held-open final cycle)', () => {
     // 14s cycle, 300s total → ceil(300/14)*14 = 308. The final cycle finishes
     // before the session reports complete.
-    const plan = { bpm: 60 / 14, ratio: '50:50' as const, cycleSec: 14, inhaleSec: 7, exhaleSec: 7, totalSec: 300 }
+    const plan = { bpm: 60 / 14, inhaleShare: 50, cycleSec: 14, inhaleSec: 7, exhaleSec: 7, totalSec: 300 }
     expect(getCompletionSec(plan)).toBe(308)
   })
 
   it('returns totalSec unchanged when it is already a whole-cycle multiple', () => {
     // 10s cycle, 300s total → already aligned, boundary === totalSec.
-    const plan = { bpm: 6, ratio: '50:50' as const, cycleSec: 10, inhaleSec: 5, exhaleSec: 5, totalSec: 300 }
+    const plan = { bpm: 6, inhaleShare: 50, cycleSec: 10, inhaleSec: 5, exhaleSec: 5, totalSec: 300 }
     expect(getCompletionSec(plan)).toBe(300)
   })
 
@@ -102,7 +102,7 @@ describe('getCompletionSec', () => {
   })
 
   it('returns null for degenerate plans (cycleSec <= 0 never complete)', () => {
-    const plan = { bpm: 0, ratio: '50:50' as const, cycleSec: 0, inhaleSec: 0, exhaleSec: 0, totalSec: 300 }
+    const plan = { bpm: 0, inhaleShare: 50, cycleSec: 0, inhaleSec: 0, exhaleSec: 0, totalSec: 300 }
     expect(getCompletionSec(plan)).toBeNull()
   })
 

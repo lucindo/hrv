@@ -4,14 +4,14 @@ import type { UiStrings } from '../content/strings'
 import {
   COOLDOWN_OPTIONS,
   RAMP_DURATION_OPTIONS,
-  RATIO_OPTIONS,
+  RATIO_INHALE_PRESETS,
   STRETCH_INITIAL_BPM_OPTIONS,
   WARMUP_MINUTES_OPTIONS,
   computeStretchTotalSec,
+  formatRatio,
   getStretchSettingsWithInitialBpm,
   getStretchTargetBpmOptions,
   type CoolDownMinutes,
-  type RatioLabel,
   type StretchSettings,
   type WarmUpMinutes,
 } from '../domain'
@@ -64,12 +64,12 @@ export function StretchSettingsForm({
             onChange={updateInitialBpm}
             strings={strings.stepper}
           />
-          <SettingsSegmentedRow<RatioLabel>
+          <SettingsSegmentedRow<number>
             label={strings.startRatioLabel}
             ariaLabel={strings.stepper.fieldAriaLabel(strings.startRatioLabel)}
-            value={settings.ratio}
-            options={RATIO_OPTIONS.map((id) => ({ id, label: id }))}
-            onChange={(ratio) => { updateStretchSettings({ ratio }) }}
+            value={settings.inhaleShare}
+            options={RATIO_INHALE_PRESETS.map((id) => ({ id, label: formatRatio(id) }))}
+            onChange={(inhaleShare) => { updateStretchSettings({ inhaleShare }) }}
           />
           <SettingsStepper
             label={strings.targetBpmLabel}
@@ -79,12 +79,12 @@ export function StretchSettingsForm({
             onChange={(targetBpm) => { updateStretchSettings({ targetBpm }) }}
             strings={strings.stepper}
           />
-          <SettingsSegmentedRow<RatioLabel>
+          <SettingsSegmentedRow<number>
             label={strings.targetRatioLabel}
             ariaLabel={strings.stepper.fieldAriaLabel(strings.targetRatioLabel)}
-            value={settings.targetRatio}
-            options={RATIO_OPTIONS.map((id) => ({ id, label: id }))}
-            onChange={(targetRatio) => { updateStretchSettings({ targetRatio }) }}
+            value={settings.targetInhaleShare}
+            options={RATIO_INHALE_PRESETS.map((id) => ({ id, label: formatRatio(id) }))}
+            onChange={(targetInhaleShare) => { updateStretchSettings({ targetInhaleShare }) }}
           />
           <SettingsStepper<WarmUpMinutes>
             label={strings.holdInitialLabel}
