@@ -1,7 +1,7 @@
 import type { SetupCardItem } from '../components/SetupCard'
 import type { UiStrings } from '../content/strings'
 import type { OmLength } from '../domain'
-import { formatRatio } from '../domain'
+import { NK_OM_SECONDS, OM_LENGTH_OPTIONS, formatRatio } from '../domain'
 import type { AppPracticeSettingsViewModel } from './appViewModel'
 
 export interface BuildSetupCardSummaryArgs {
@@ -68,7 +68,7 @@ export function buildSetupCardSummary({
 
   const n = settings.settings
   const nk = practice.nkControls
-  const omLengthLabel = formatOmLength(n.omLength, nk)
+  const omLengthLabel = formatOmLength(n.omSeconds, nk)
   return [
     { id: 'rounds', label: nk.roundsLabel, value: String(n.rounds) },
     { id: 'frontCount', label: nk.frontCountShortLabel, value: String(n.frontCount) },
@@ -76,9 +76,12 @@ export function buildSetupCardSummary({
   ]
 }
 
-function formatOmLength(value: OmLength, nk: UiStrings['practice']['nkControls']): string {
-  if (value === 'fast') return nk.omLengthFast
-  if (value === 'slow') return nk.omLengthSlow
+function formatOmLength(omSeconds: number, nk: UiStrings['practice']['nkControls']): string {
+  // Reverse-map the preset seconds to its named label. Non-preset (advanced
+  // free-set) values fall back to the medium label — relevant once sliders ship.
+  const label = (OM_LENGTH_OPTIONS as readonly OmLength[]).find((k) => NK_OM_SECONDS[k] === omSeconds) ?? 'medium'
+  if (label === 'fast') return nk.omLengthFast
+  if (label === 'slow') return nk.omLengthSlow
   return nk.omLengthMedium
 }
 

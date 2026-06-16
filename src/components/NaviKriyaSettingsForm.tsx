@@ -3,6 +3,7 @@ import type { ReactElement } from 'react'
 import type { UiStrings } from '../content/strings'
 import {
   NK_FRONT_COUNT_OPTIONS,
+  NK_OM_SECONDS,
   NK_ROUNDS_OPTIONS,
   OM_LENGTH_OPTIONS,
   estimateNaviKriyaDurationMinutes,
@@ -56,12 +57,12 @@ export function NaviKriyaSettingsForm({
         onChange={(frontCount) => { updateNkSettings({ frontCount }) }}
         strings={strings.stepper}
       />
-      <SettingsSegmentedRow<OmLength>
+      <SettingsSegmentedRow<number>
         label={nkControlsStrings.omLengthLabel}
         ariaLabel={strings.stepper.fieldAriaLabel(nkControlsStrings.omLengthLabel)}
-        value={settings.omLength}
-        options={OM_LENGTH_OPTIONS.map((id) => ({ id, label: formatOmLength(id) }))}
-        onChange={(omLength) => { updateNkSettings({ omLength }) }}
+        value={settings.omSeconds}
+        options={OM_LENGTH_OPTIONS.map((id) => ({ id: NK_OM_SECONDS[id], label: formatOmLength(id) }))}
+        onChange={(omSeconds) => { updateNkSettings({ omSeconds }) }}
       />
       <SettingsToggleRow
         label={nkControlsStrings.perOmCueLabel}

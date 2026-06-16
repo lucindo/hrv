@@ -17,7 +17,8 @@
 // desync, and returning users get a theme flash on every load.
 export const STATE_KEY = 'hrv:state:v1'
 // STATE_VERSION bumped 3→4: migrateEnvelope converts ratio labels ('40:60') to
-// numeric inhaleShare across the resonant + stretch slices (advanced precise-control).
+// numeric inhaleShare (resonant + stretch) and omLength ('medium') to numeric
+// omSeconds (naviKriya) — the advanced precise-control number model.
 export const STATE_VERSION = 4 as const
 
 export interface StorageDeps {
@@ -147,6 +148,20 @@ export function migrateEnvelope(env: Envelope, fromVersion: number): Envelope {
           ...(inhaleShare !== undefined ? { inhaleShare } : {}),
           ...(targetInhaleShare !== undefined ? { targetInhaleShare } : {}),
         },
+      }
+    }
+    // naviKriya: omLength label ('fast'/'medium'/'slow') → numeric omSeconds.
+    const OM_LENGTH_TO_SECONDS: Readonly<Record<string, number>> = {
+      fast: 1.75, medium: 2.16, slow: 3.0,
+    }
+    if (practices['naviKriya'] !== undefined) {
+      const slice = asRecord(practices['naviKriya'])
+      const settings = asRecord(slice.settings)
+      const omSeconds = typeof settings.omLength === 'string'
+        ? OM_LENGTH_TO_SECONDS[settings.omLength]
+        : undefined
+      if (omSeconds !== undefined) {
+        next['naviKriya'] = { ...slice, settings: { ...settings, omSeconds } }
       }
     }
     out = { ...out, practices: next }

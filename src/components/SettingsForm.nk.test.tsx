@@ -9,6 +9,7 @@ import { UI_STRINGS } from '../content/strings'
 import {
   DEFAULT_NK_SETTINGS,
   NK_FRONT_COUNT_OPTIONS,
+  NK_OM_SECONDS,
   estimateNaviKriyaDurationMinutes,
   type NaviKriyaSettings,
 } from '../domain'
@@ -75,16 +76,16 @@ describe('NaviKriyaSettingsForm', () => {
     expect(next.frontCount % 4).toBe(0)
   })
 
-  it('the OM-length control offers fast/medium/slow and calls back with the chosen omLength', async () => {
+  it('the OM-length control offers fast/medium/slow and calls back with the chosen omSeconds', async () => {
     const user = userEvent.setup()
     const onChangeSpy = vi.fn()
-    render(<NKHarness initial={{ ...DEFAULT_NK_SETTINGS, omLength: 'medium' }} onChangeSpy={onChangeSpy} />)
+    render(<NKHarness initial={{ ...DEFAULT_NK_SETTINGS, omSeconds: NK_OM_SECONDS.medium }} onChangeSpy={onChangeSpy} />)
     // J16: OM pace is now a segmented control (radio buttons) inside the
     // SettingsSegmentedRow fieldset, not a +/- stepper.
     const omGroup = screen.getByRole('group', { name: NK.omLengthLabel })
     expect(within(omGroup).getByRole('radio', { name: NK.omLengthMedium })).toHaveAttribute('aria-checked', 'true')
     await user.click(within(omGroup).getByRole('radio', { name: NK.omLengthFast }))
-    expect((onChangeSpy.mock.calls[0]?.[0] as NaviKriyaSettings).omLength).toBe('fast')
+    expect((onChangeSpy.mock.calls[0]?.[0] as NaviKriyaSettings).omSeconds).toBe(NK_OM_SECONDS.fast)
   })
 
   it('toggling the per-OM cue calls onNKSettingsChange with the flipped perOmCue', async () => {

@@ -17,7 +17,7 @@ const makeClock = () => createWallSessionClock()
 // Default small settings so tests finish quickly under fake timers
 const defaultSettings: NaviKriyaSettings = {
   frontCount: 8,  // backCount = 2
-  omLength: 'medium',
+  omSeconds: NK_OM_SECONDS.medium,
   rounds: 1,
   perOmCue: true,
 }
@@ -91,7 +91,7 @@ describe('useNKEngine', () => {
     const cbs = makeCallbacks()
     const settings: NaviKriyaSettings = {
       frontCount: 4,   // backCount = 1
-      omLength: 'fast',
+      omSeconds: NK_OM_SECONDS.fast,
       rounds: 3,
       perOmCue: false,
     }
@@ -176,7 +176,7 @@ describe('useNKEngine', () => {
       const cbs = makeCallbacks()
       const settings: NaviKriyaSettings = {
         frontCount: 4,
-        omLength: 'fast',
+        omSeconds: NK_OM_SECONDS.fast,
         rounds: 1,
         perOmCue: false,
       }
@@ -197,7 +197,7 @@ describe('useNKEngine', () => {
       const cbs = makeCallbacks()
       const settings: NaviKriyaSettings = {
         frontCount: 4,
-        omLength: 'fast',
+        omSeconds: NK_OM_SECONDS.fast,
         rounds: 1,
         perOmCue: true,
       }

@@ -26,7 +26,7 @@ import {
 import {
   DEFAULT_NK_SETTINGS,
   NK_FRONT_COUNT_OPTIONS,
-  isValidOmLength,
+  isValidOmSeconds,
   isValidRounds,
   type NaviKriyaSettings,
 } from '../domain/naviKriyaSettings'
@@ -95,7 +95,7 @@ export function coerceNaviKriyaSettings(raw: unknown): NaviKriyaSettings {
   }
   return {
     frontCount,
-    omLength: isValidOmLength(r.omLength) ? r.omLength : DEFAULT_NK_SETTINGS.omLength,
+    omSeconds: isValidOmSeconds(r.omSeconds) ? r.omSeconds : DEFAULT_NK_SETTINGS.omSeconds,
     rounds:   isValidRounds(r.rounds)     ? r.rounds   : DEFAULT_NK_SETTINGS.rounds,
     perOmCue: typeof r.perOmCue === 'boolean' ? r.perOmCue : DEFAULT_NK_SETTINGS.perOmCue,
   }

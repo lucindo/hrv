@@ -407,6 +407,16 @@ describe('migrateEnvelope v3→v4 (ratio label → inhaleShare)', () => {
     expect(stretch?.settings).toMatchObject({ inhaleShare: 50, targetInhaleShare: 20 })
   })
 
+  it('converts naviKriya omLength label to numeric omSeconds, keeping the label orphan', () => {
+    const env = {
+      version: 3,
+      practices: { naviKriya: { settings: { frontCount: 200, omLength: 'slow', rounds: 3, perOmCue: true }, stats: {} } },
+    }
+    const out = migrateEnvelope(env, 3)
+    const nk = (out.practices as Record<string, { settings: Record<string, unknown> }>)['naviKriya']
+    expect(nk?.settings).toMatchObject({ omSeconds: 3.0, omLength: 'slow' })
+  })
+
   it('leaves a slice with no ratio label untouched', () => {
     const env = { version: 3, practices: { resonant: { settings: { bpm: 4, durationMinutes: 10 }, stats: {} } } }
     const out = migrateEnvelope(env, 3)

@@ -17,10 +17,10 @@ import type { NaviKriyaSettings } from '../domain/naviKriyaSettings'
 import {
   NK_LAST_OM_HOLD_MULTIPLIER,
   NK_LEAD_SEC,
-  NK_OM_SECONDS,
 } from '../domain/naviKriyaSession'
 
-export { NK_LAST_OM_HOLD_MULTIPLIER, NK_LEAD_SEC, NK_OM_SECONDS } from '../domain/naviKriyaSession'
+export { NK_LAST_OM_HOLD_MULTIPLIER, NK_LEAD_SEC } from '../domain/naviKriyaSession'
+export { NK_OM_SECONDS } from '../domain/naviKriyaSettings'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -32,7 +32,7 @@ interface NKEngineRecord {
   frontCount: number
   backCount: number        // = frontCount / 4, computed once at start()
   rounds: number
-  omSec: number            // NK_OM_SECONDS[omLength] (seconds-shaped)
+  omSec: number            // settings.omSeconds (seconds-shaped)
   cueOn: boolean           // mirrors perOmCue; mutable for live toggle via toggleCue()
   startedAtSec: number     // clock.now() at start — for elapsed stats (seconds-shaped)
   completedRounds: number  // fully-completed rounds (for early-end stats)
@@ -192,7 +192,7 @@ export function useNKEngine(clock: SessionClock): NKEngineApi {
       frontCount: settings.frontCount,
       backCount,
       rounds: settings.rounds,
-      omSec: NK_OM_SECONDS[settings.omLength],
+      omSec: settings.omSeconds,
       cueOn: settings.perOmCue,
       startedAtSec: clock.now(),
       completedRounds: 0,

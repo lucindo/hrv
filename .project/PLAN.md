@@ -18,11 +18,24 @@ discrete presets become a UI view + snap-on-toggle-off.
 - [ ] Advanced toggle in Settings → Behavior block — persists, round-trips, snap-on-off works end to end.
 - [ ] i18n strings added for toggle + slider aria labels (all locales).
 
+## Re-slice (vertical, green-between — replaces the horizontal roadmap above)
+
+- [x] Slice 1 — `prefs.advanced` flag (default false) + widen `isValidBpm` to range 1–7. (`91769b9`)
+- [x] Slice 2 — ratio → `inhaleShare: number` end-to-end (domain/engines/forms/presentation + v3→v4 migration). (`refactor(settings): model breath ratio as numeric inhaleShare`)
+- [ ] Slice 3 — `omLength` → `omSeconds: number` end-to-end (NK engine, bounds 1.0–4.0s); extend the v4 migration to convert the omLength label.
+- [ ] Slice 4 — `SettingsSlider` primitive (continuous range + nudges, aria).
+- [ ] Slice 5 — forms swap stepper/segmented ↔ slider by `advanced`; Stretch BPM dynamic bounds; advanced-aware coerce snap (deferred from slice 2).
+- [ ] Slice 6 — advanced toggle in Settings → Behavior block + i18n strings.
+
 ## Now
 
-**State** — Planned. Decisions locked (Q1–Q11), roadmap drafted. No code yet.
+**State** — Slices 1–2 landed on `feat/advanced-precise-control`, suite 1350/1350,
+build + lint clean. Velocity/ratio model half-collapsed (ratio done; omLength next).
 
-**Next** — Start task 1: domain field rename + validator widening. Suite + build
-green before each commit.
+**Next** — Slice 3: `omLength` → `omSeconds`.
+
+**Deferred** — Advanced-aware coerce snap (Q11 "off ⇒ snap to nearest preset"):
+slice 2 coerce only range-validates; real data is preset-valued post-migration,
+so the snap is defensive-only — wire it in slice 5 with the forms/toggle.
 
 **Open questions** — None.
