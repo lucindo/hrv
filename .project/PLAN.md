@@ -25,19 +25,21 @@ discrete presets become a UI view + snap-on-toggle-off.
 - [x] Slice 3 — `omLength` → `omSeconds: number` end-to-end (NK engine, bounds 1.0–4.0s); v4 migration converts the omLength label. (`refactor(navikriya): model OM pace as numeric omSeconds`)
 - [x] Slice 4 — `SettingsSlider` primitive (continuous range + nudges, aria). (`feat(settings): add SettingsSlider primitive`)
 - [x] Slice 5 — forms swap stepper/segmented ↔ slider by `advanced` (via `useAdvancedMode`); Stretch BPM dynamic bounds. (`feat(settings): wire advanced sliders into the three forms`)
-- [ ] Slice 6 — advanced toggle in Settings → Behavior block + **toggle-off snap to nearest preset** (Q6, also covers the slice-2 deferral) + i18n strings.
+- [x] Slice 6 — advanced toggle in Settings → Behavior + toggle-off snap to nearest preset (Q6) + i18n. (`feat(settings): add Precise control toggle + snap-on-disable`)
 
 ## Now
 
-**State** — Slices 1–3 landed on `feat/advanced-precise-control`, suite 1350/1350,
-build + lint clean. The number model is fully in place: bpm, inhaleShare, and
-omSeconds are all bounded numbers; discrete pickers are a UI view. No sliders yet.
+**State** — COMPLETE. All 6 slices landed on `feat/advanced-precise-control`,
+suite 1373/1373, build + lint clean. The "Precise control" toggle (Settings →
+Advanced → Behavior) swaps the discrete pickers for continuous sliders across
+HRV, Stretch, and Navi; turning it off snaps values back to presets. v3→v4
+migration converts persisted labels to the number model.
 
-**Next** — Slice 6: advanced toggle in Settings → Behavior, toggle-off snap to
-nearest preset, i18n strings. This makes the feature live end to end.
+**Next** — Operator visual test. Then merge `feat/advanced-precise-control` → `main`
+and release if approved.
 
-**Deferred** — Advanced-aware coerce snap (Q11 "off ⇒ snap to nearest preset"):
-slice 2 coerce only range-validates; real data is preset-valued post-migration,
-so the snap is defensive-only — wire it in slice 5 with the forms/toggle.
+**Deferred → resolved** — The Q11 coerce-snap was implemented instead as the Q6
+toggle-off reconcile (`useSnapToPresets`), which updates live state immediately;
+no coerce-signature change was needed.
 
 **Open questions** — None.
