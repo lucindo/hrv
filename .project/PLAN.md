@@ -26,21 +26,23 @@ discrete presets become a UI view + snap-on-toggle-off.
 - [x] Slice 4 — `SettingsSlider` primitive (continuous range + nudges, aria). (`feat(settings): add SettingsSlider primitive`)
 - [x] Slice 5 — forms swap stepper/segmented ↔ slider by `advanced` (via `useAdvancedMode`); Stretch BPM dynamic bounds. (`feat(settings): wire advanced sliders into the three forms`)
 - [x] Slice 6 — advanced toggle in Settings → Behavior + toggle-off snap to nearest preset (Q6) + i18n. (`feat(settings): add Precise control toggle + snap-on-disable`)
-- [x] Post-test UI fixes — SetupCard rounds free BPM; Navi card shows seconds for a free OM pace. (`8207502`)
+- [x] Post-test UI fixes — round free values everywhere they surface: SetupCard BPM + Navi seconds (`8207502`); HRV in-session caption (`bd7ddf1`). Stretch in-session caption already rounds via `toFixed(1)`; Navi has no in-session velocity caption.
 
 ## Now
 
-**State** — COMPLETE and operator-tested. All 6 slices + 2 post-test UI fixes
-landed on `feat/advanced-precise-control` (11 commits, working tree clean), suite
-1375/1375, build + lint green. Operator confirmed it works; the two SetupCard
-formatting issues they reported are fixed.
+**State** — SHIPPED. Advanced precise-control merged to `main` (PR #3, `4b447ca`)
+and released as **v2.5** (`898843a` bump to 2.5.0; `d31a242` set v2.5 official;
+tag `v2.5`). Feature branch deleted. Working tree clean; `main` @ `d31a242`,
+`package.json` 2.5.0.
 
-**Next** — Merge `feat/advanced-precise-control` → `main` (awaiting operator
-go-ahead — not yet given), then release/tag if approved.
+**Next** — Nothing pending. Pick up new work, or one of the optional follow-ups
+below.
 
-**Open questions** — None blocking. Optional tiny follow-up: the OM-pace seconds
-unit "s" is hardcoded (locale-neutral) rather than routed through `strings.ts`.
+**Open questions** — None blocking. Optional tiny follow-ups (operator gave no
+reply, safe to skip): OM-pace "s" unit is hardcoded (locale-neutral, not in
+`strings.ts`); Stretch in-session caption uses `toFixed(1)` (1 dp) vs
+`formatTrimmed` (2 dp) elsewhere — offered to unify.
 
-**Notes** — Q11 coerce-snap was resolved as the Q6 toggle-off reconcile
+**Notes** — Q11 coerce-snap resolved as the Q6 toggle-off reconcile
 (`useSnapToPresets`), updating live state immediately with no coerce-signature
 change. Decisions: `.project/DECISIONS.md` (Q1–Q11).
