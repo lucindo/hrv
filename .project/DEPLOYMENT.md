@@ -118,3 +118,42 @@ action deprecation warnings (`actions/checkout@v4` etc.) — cosmetic, not a fai
 - **`workflow_dispatch` skips `build-current`** (no pushed tag) and reads
   `versions.json` from `main`. Good for re-deploying root after an `official` edit;
   it will NOT (re)publish a version subpath.
+
+## Desktop releases (Pake)
+
+Native desktop apps (macOS universal `.dmg`, Windows x64 `.msi`) build and release
+**independently** of the web deploy above. Source of truth:
+`.github/workflows/desktop.yml`. Decisions: `DECISIONS.md` DA1–DA10.
+
+- **Separate trigger:** `push` of a `desktop-v*` tag (plus `workflow_dispatch` for
+  test runs). The `desktop-` prefix can't match the web `v*` trigger, so the two
+  pipelines never cross — a desktop release does **not** touch Pages, `versions.json`,
+  or `main`.
+- **Tag form is full SemVer** (`desktop-v2.5.1`, matching `package.json.version`) and
+  every release is a **fresh tag** — no slot-reuse / tag-moving like the web `vX.Y`.
+- **What it does:** matrix-builds mac (`--multi-arch` universal) + win via pinned
+  `pake-cli`, wrapping the live `https://lucindo.github.io/hrv/`. Installers are
+  renamed `HRV-Breathing-<version>-{macos-universal.dmg,windows-x64.msi}` and
+  attached to a GitHub Release on the tag.
+- **The wrapper loads the live URL** — installed apps auto-update their web content,
+  so desktop releases are rare: cut one only when wrapper config changes (icon,
+  window, name, pake/Tauri bump), not on every web release.
+- **Unsigned builds** — first-launch Gatekeeper/SmartScreen workaround lives in the
+  README + the release notes (DA4); no code signing.
+
+### Cut a desktop release
+1. From `main` (the workflow must be on the default branch, else `workflow_dispatch`
+   404s and a tag must point at a commit that has `desktop.yml`):
+   ```
+   git tag desktop-v<X.Y.Z>      # == package.json.version
+   git push origin desktop-v<X.Y.Z>
+   ```
+2. The run builds both legs and publishes the Release. Verify:
+   ```
+   gh run list --workflow=desktop.yml --limit 3
+   gh release view desktop-v<X.Y.Z> --json assets --jq '.assets[].name'
+   curl -sI -o /dev/null -w '%{http_code} -> %{redirect_url}\n' \
+     https://github.com/lucindo/hrv/releases/latest
+   ```
+   Three green jobs (`macos-universal`, `windows-x64`, `release`) + both assets
+   attached + `releases/latest` → the new tag = done.
