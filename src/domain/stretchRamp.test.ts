@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   buildStretchSegments,
   getStretchFrame,
+  getStretchCompletionSec,
   computeStretchTotalSec,
 } from './stretchRamp'
 import type { StretchSegment } from './stretchRamp'
@@ -312,17 +313,21 @@ describe('getStretchFrame', () => {
     expect(getStretchFrame(segs, 0).stage).toBe('hold-initial')
   })
 
-  it('isComplete fires exactly at the last segment endSec (cycle-aligned, no drift)', () => {
+  it('isComplete is held to the rounded cool-down cycle end, not the partial endSec', () => {
     const segs = buildStretchSegments(baseSettings)
     const endSec = (segs[segs.length - 1] as StretchSegment).endSec
+    const completionSec = requireValue(getStretchCompletionSec(segs) ?? undefined, 'Expected a completion boundary')
 
-    // 1 ms = 0.001 sec (CLAMP_EPSILON_SEC parity).
-    expect(getStretchFrame(segs, endSec - 0.001).isComplete).toBe(false)
-    expect(getStretchFrame(segs, endSec).isComplete).toBe(true)
-    expect(getStretchFrame(segs, endSec + 0.1).isComplete).toBe(true)
+    // endSec is the partial requested total; completion is held to the next whole
+    // cool-down cycle so the last In/Out finishes (mirrors HRV's getCompletionSec).
+    expect(completionSec).toBeGreaterThan(endSec)
+    expect(getStretchFrame(segs, endSec).isComplete).toBe(false)
+    expect(getStretchFrame(segs, completionSec - 0.001).isComplete).toBe(false)
+    expect(getStretchFrame(segs, completionSec).isComplete).toBe(true)
+    expect(getStretchFrame(segs, completionSec + 0.1).isComplete).toBe(true)
   })
 
-  it('does not complete early — the cool-down segment runs to its endSec (CR-01 regression)', () => {
+  it('does not complete early — the cool-down runs to its rounded cycle end (CR-01 regression)', () => {
     // Drift-prone config: non-integer cycle counts in every segment.
     const driftSettings: StretchSettings = {
       inhaleShare: 40,
@@ -336,11 +341,13 @@ describe('getStretchFrame', () => {
     const segs = buildStretchSegments(driftSettings)
     const coolDown = segs[segs.length - 1] as StretchSegment
     expect(coolDown.stage).toBe('hold-target')
+    const completionSec = requireValue(getStretchCompletionSec(segs) ?? undefined, 'Expected a completion boundary')
     const midCoolDown = coolDown.startSec + (coolDown.endSec - coolDown.startSec) / 2
     expect(getStretchFrame(segs, coolDown.startSec).isComplete).toBe(false)
     expect(getStretchFrame(segs, midCoolDown).isComplete).toBe(false)
     expect(getStretchFrame(segs, midCoolDown).stage).toBe('hold-target')
-    expect(getStretchFrame(segs, coolDown.endSec).isComplete).toBe(true)
+    expect(getStretchFrame(segs, coolDown.endSec).isComplete).toBe(false)
+    expect(getStretchFrame(segs, completionSec).isComplete).toBe(true)
   })
 
   it('open-ended: isComplete is always false', () => {
@@ -463,45 +470,44 @@ describe('getStretchFrame', () => {
     expect(lastFrame.phaseProgress).toBeGreaterThan(0.8)
   })
 
-  it('GAP-3: remainingSec decreases monotonically across the final cycle and isComplete stays false until sessionEndSec', () => {
+  it('GAP-3: remainingSec is non-increasing across the final cycle and isComplete holds until completionSec', () => {
     const segs = buildStretchSegments(baseSettings)
     const coolDownSeg = segs[segs.length - 1] as StretchSegment
-    const sessionEndSec = coolDownSeg.endSec
+    const completionSec = requireValue(getStretchCompletionSec(segs) ?? undefined, 'Expected a completion boundary')
     const cycleSec = coolDownSeg.cycleSec
-    const lastCycleStartSec = sessionEndSec - cycleSec
+    const lastCycleStartSec = completionSec - cycleSec
 
     const samples: number[] = []
-    for (let t = lastCycleStartSec; t <= sessionEndSec; t += Math.max(0.001, cycleSec / 10)) {
+    for (let t = lastCycleStartSec; t <= completionSec; t += Math.max(0.001, cycleSec / 10)) {
       samples.push(t)
     }
-    // Ensure sessionEndSec is included
-    if (!samples.includes(sessionEndSec)) samples.push(sessionEndSec)
+    // Ensure completionSec is included
+    if (!samples.includes(completionSec)) samples.push(completionSec)
     samples.sort((a, b) => a - b)
 
     let lastRemaining = Infinity
     for (const t of samples) {
       const f = getStretchFrame(segs, t)
-      if (t < sessionEndSec) {
+      if (t < completionSec) {
         expect(f.isComplete).toBe(false)
         const rem = f.remainingSec ?? Infinity
         expect(rem).toBeLessThanOrEqual(lastRemaining)
         lastRemaining = rem
       } else {
-        // At exactly sessionEndSec
+        // At exactly completionSec
         expect(f.isComplete).toBe(true)
         expect(f.remainingSec).toBe(0)
       }
     }
   })
 
-  it('GAP-3 (phantom-cycle protection preserved): frame at exactly sessionEndSec carries the last real cycle index, not one past it', () => {
+  it('GAP-3 (phantom-cycle protection preserved): frame at exactly completionSec carries the last real cycle index, not one past it', () => {
     const segs = buildStretchSegments(baseSettings)
-    const coolDownSeg = segs[segs.length - 1] as StretchSegment
-    const sessionEndSec = coolDownSeg.endSec
+    const completionSec = requireValue(getStretchCompletionSec(segs) ?? undefined, 'Expected a completion boundary')
 
-    // The frame just before endSec and the frame at endSec must be on the same cycle index.
-    const frameBefore = getStretchFrame(segs, sessionEndSec - 0.001)
-    const frameAt = getStretchFrame(segs, sessionEndSec)
+    // The frame just before completionSec and the frame at it must be on the same cycle index.
+    const frameBefore = getStretchFrame(segs, completionSec - 0.001)
+    const frameAt = getStretchFrame(segs, completionSec)
 
     expect(frameAt.isComplete).toBe(true)
     expect(frameAt.cycleIndex).toBe(frameBefore.cycleIndex)
@@ -576,10 +582,14 @@ describe('getStretchFrame', () => {
     // The last sample's phaseProgress must differ from the first (animation is advancing)
     expect(lastFrame.phaseProgress).not.toBe(firstFrame.phaseProgress)
 
-    // isComplete must fire at exactly sessionEndSec
-    expect(getStretchFrame(segs, sessionEndSec - 0.001).isComplete).toBe(false)
-    expect(getStretchFrame(segs, sessionEndSec).isComplete).toBe(true)
+    // Completion is held past sessionEndSec to the rounded cool-down cycle end so the
+    // final In/Out finishes; the countdown still reaches 0 at sessionEndSec.
+    const completionSec = requireValue(getStretchCompletionSec(segs) ?? undefined, 'Expected a completion boundary')
+    expect(completionSec).toBeGreaterThan(sessionEndSec)
+    expect(getStretchFrame(segs, sessionEndSec).isComplete).toBe(false)
     expect(getStretchFrame(segs, sessionEndSec).remainingSec).toBe(0)
+    expect(getStretchFrame(segs, completionSec - 0.001).isComplete).toBe(false)
+    expect(getStretchFrame(segs, completionSec).isComplete).toBe(true)
   })
 })
 
