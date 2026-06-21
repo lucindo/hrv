@@ -221,27 +221,22 @@ export function getStretchFrame(
     }
   }
 
-  // When safeElapsedSec lands exactly on the last bounded segment's endSec,
-  // no segment satisfies `safeElapsedSec < seg.endSec` and `activeSeg` falls
-  // through to the final segment. An unclamped `elapsedInSec` would then equal
-  // the full segment span, making `cycleInSegment` compute exactly `cycleCount`
-  // — one past the last valid index — and the completion frame would carry a
-  // phantom extra in-phase cycle. The clamp guards ONLY that exact-endSec
-  // landing: the ceiling is 0.001 sec inside the segment span (CLAMP_EPSILON_SEC).
-  // For any elapsed value strictly below endSec, rawElapsedInSec < segmentSpan,
-  // so the clamp has no effect and the frame advances freely through the entire
-  // final cycle (including the last exhale). Only when elapsed lands exactly on
-  // endSec is rawElapsedInSec nudged 1 ms below the boundary, keeping
-  // Math.floor(elapsedInSec / cycleSec) on the last real cycle index.
-  // This matches HRV's getSessionFrame: no mid-cycle freeze; animation and
-  // countdown complete together. The open-ended segment (endSec === Infinity)
-  // is left unclamped — CLAMP_EPSILON_SEC is never relevant there.
-  const CLAMP_EPSILON_SEC = 0.001 // 1 ms pull-back guards only the exact endSec landing
+  // Hold-open boundary: for the final bounded cool-down the frame advances through
+  // to completionSec (endSec rounded UP to a whole cool-down cycle), not the partial
+  // endSec — so the last In/Out finishes instead of freezing mid-exhale. Earlier
+  // segments use their own (already cycle-aligned) endSec. CLAMP_EPSILON_SEC pulls the
+  // exact-boundary landing 1 ms inside the span so Math.floor(elapsedInSec / cycleSec)
+  // stays on the last real cycle index instead of rolling one past it. The open-ended
+  // final segment (endSec === Infinity, completionSec === null) is left unclamped.
+  const completionSec = getStretchCompletionSec(segments)
+  const CLAMP_EPSILON_SEC = 0.001
+  const segmentCeilingSec =
+    activeSeg === finalSegment && completionSec !== null ? completionSec : activeSeg.endSec
   const rawElapsedInSec = safeElapsedSec - activeSeg.startSec
   const elapsedInSec =
-    activeSeg.endSec === Infinity
+    segmentCeilingSec === Infinity
       ? rawElapsedInSec
-      : Math.min(rawElapsedInSec, activeSeg.endSec - activeSeg.startSec - CLAMP_EPSILON_SEC)
+      : Math.min(rawElapsedInSec, segmentCeilingSec - activeSeg.startSec - CLAMP_EPSILON_SEC)
   const cycleInSegment = Math.floor(elapsedInSec / activeSeg.cycleSec)
   const absoluteCycleIndex = activeSeg.cycleBaseIndex + cycleInSegment
   const cycleStartSec = activeSeg.startSec + cycleInSegment * activeSeg.cycleSec
@@ -260,11 +255,12 @@ export function getStretchFrame(
   const phaseProgress = Math.min(1, Math.max(0, rawProgress))
   const phase: BreathPhase = isInPhase ? 'in' : 'out'
 
-  // Remaining and completion derive from the segment table's true end —
-  // the last segment's endSec (already cycle-aligned; Infinity → open-ended).
+  // remainingSec counts down to the requested total (endSec) so the countdown still
+  // reaches 0:00 there; completion is HELD to completionSec (the in-progress cool-down
+  // cycle's end) so the last In/Out finishes first — mirrors HRV's getCompletionSec.
   const sessionEndSec = finalSegment.endSec
   const remainingSec = sessionEndSec === Infinity ? null : Math.max(0, sessionEndSec - safeElapsedSec)
-  const isComplete = sessionEndSec !== Infinity && safeElapsedSec >= sessionEndSec
+  const isComplete = completionSec !== null && safeElapsedSec >= completionSec
 
   return {
     phase,
@@ -302,4 +298,25 @@ export function computeStretchTotalSec(settings: StretchSettings): number | null
     throw new Error('buildStretchSegments returned no segments')
   }
   return finalSegment.endSec
+}
+
+// ─── getStretchCompletionSec ──────────────────────────────────────────────────
+
+/**
+ * The elapsed-seconds boundary at which a stretch session reports complete — the
+ * stretch analog of getCompletionSec (sessionMath.ts). The bounded cool-down's
+ * endSec is a deliberately PARTIAL final cycle (it absorbs the cycle-snapping
+ * residual so the realized total equals the requested whole-minute total). Rounding
+ * it UP to the next whole cool-down cycle holds completion to the END of the
+ * in-progress In/Out, so the last breath and its cues are never cut.
+ *
+ * computeStretchTotalSec (displayed Duration) stays at the requested endSec; only
+ * completion is held — exactly as HRV runs slightly past its displayed duration.
+ * Returns null for open-ended cool-downs (endSec === Infinity) and empty tables.
+ */
+export function getStretchCompletionSec(segments: StretchSegment[]): number | null {
+  const finalSegment = segments.at(-1)
+  if (finalSegment === undefined || finalSegment.endSec === Infinity) return null
+  const span = finalSegment.endSec - finalSegment.startSec
+  return finalSegment.startSec + Math.ceil(span / finalSegment.cycleSec) * finalSegment.cycleSec
 }

@@ -332,3 +332,35 @@ Implementation order (each a self-contained commit; suite + build green between)
 
 Non-decision follow-ups (content/impl, not design): new i18n strings for toggle
 + slider aria labels (all locales); confirm stats pass numbers through unchanged.
+
+---
+
+# Decision — Stretch completion holds the final cycle (2026-06-20)
+
+Source: `/ds-debug` — operator reported the Stretch end screen/sound firing at
+countdown-zero, cutting the last In/Out (HRV already holds it).
+
+## SC-1 — Hold Stretch completion to the end of the in-progress cool-down cycle
+
+**Q:** Stretch fired `isComplete` and the end chord at `finalSegment.endSec` (the
+exact requested total — a deliberately PARTIAL final cycle), so the last breath was
+cut mid-exhale at 0:00. HRV rounds completion up to the cycle via `getCompletionSec`.
+Match HRV, or keep the exact-total cutoff?
+
+**Decision:** Match HRV. Added `getStretchCompletionSec(segments)` = the cool-down's
+partial `endSec` rounded UP to the next whole cool-down cycle. `getStretchFrame`
+keys `isComplete` and its clamp ceiling off it (the orb advances through the final
+exhale), and `resolveTargetSec` uses it so cues + end chord fire at the true cycle
+end. `remainingSec` and the displayed Duration (`computeStretchTotalSec` = `endSec`)
+are unchanged — the countdown still reaches 0:00 at the requested total.
+
+**Supersedes:** the "realized session total equals the requested whole-minute total
+exactly" property (plan 34-10 / UAT GAP-1, and SPEC.md D-5/FR-6 "displayed Duration
+equals the real session length"). The *displayed* total still equals the request;
+the session now ends up to one cool-down breath cycle (60/targetBpm seconds) later to
+finish the breath — exactly as HRV already runs past its displayed duration. The
+segment table itself is unchanged (`endSec` still == requested total), so
+`buildStretchSegments` / `computeStretchTotalSec` and their docstrings remain accurate.
+
+**Rationale:** Cross-practice consistency — a guided breath should never be cut
+mid-exhale. The sub-cycle overrun is the same accepted behavior HRV ships.

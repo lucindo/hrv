@@ -385,7 +385,7 @@ describe('session-end boundary trim: held-open final breath plays, no end-chord 
 
 // resolveTargetSec is the lookahead trim boundary the controller feeds walkFutureCues.
 // These pin the wiring that the bug lived in: it MUST source the true completion
-// boundary (HRV: getCompletionSec; Stretch: finalSegment.endSec), never plan.totalSec.
+// boundary (HRV: getCompletionSec; Stretch: getStretchCompletionSec), never plan.totalSec.
 describe('resolveTargetSec', () => {
   it('HRV timed: returns the rounded completion boundary, not the raw totalSec', () => {
     // 14s cycle, 300s total → ceil(300/14)*14 = 308 (held-open final cycle).
@@ -397,11 +397,12 @@ describe('resolveTargetSec', () => {
     expect(resolveTargetSec(hrvPlan, undefined)).toBeUndefined() // hrvPlan.totalSec === null
   })
 
-  it('Stretch bounded: returns the final segment endSec', () => {
+  it('Stretch bounded: returns the cool-down endSec rounded up to a whole cycle', () => {
+    // endSec 25 sits mid-cycle (cycleSec 10) → completion held to ceil(25/10)*10 = 30.
     const segs: StretchSegment[] = [
       { startSec: 0, endSec: 25, bpm: 6, cycleSec: 10, inhaleSec: 4, exhaleSec: 6, stage: 'hold-target', cycleBaseIndex: 0 },
     ]
-    expect(resolveTargetSec(hrvPlan, segs)).toBe(25)
+    expect(resolveTargetSec(hrvPlan, segs)).toBe(30)
   })
 
   it('Stretch open-ended (endSec Infinity): returns undefined (no trim)', () => {
@@ -412,14 +413,14 @@ describe('resolveTargetSec', () => {
   })
 
   it('Stretch takes precedence over the (resonant) plan — the regression guard', () => {
-    // A timed resonant plan AND stretch segments: the trim must use the segment end
-    // (25), NOT the resonant plan.totalSec (300). Reverting to plan.totalSec here is
-    // exactly what silenced a stretch session's final minutes.
+    // A timed resonant plan AND stretch segments: the trim must use the stretch
+    // completion boundary (ceil(25/10)*10 = 30), NOT the resonant plan.totalSec (300).
+    // Reverting to plan.totalSec here is exactly what silenced a stretch session's final minutes.
     const timedResonant: BreathingPlan = { bpm: 6, inhaleShare: 50, cycleSec: 10, inhaleSec: 5, exhaleSec: 5, totalSec: 300 }
     const segs: StretchSegment[] = [
       { startSec: 0, endSec: 25, bpm: 6, cycleSec: 10, inhaleSec: 4, exhaleSec: 6, stage: 'hold-target', cycleBaseIndex: 0 },
     ]
-    expect(resolveTargetSec(timedResonant, segs)).toBe(25)
+    expect(resolveTargetSec(timedResonant, segs)).toBe(30)
   })
 })
 

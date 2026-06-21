@@ -1,6 +1,6 @@
 import type { BreathingPlan } from './breathingPlan'
 import { getCompletionSec, type SessionFrame } from './sessionMath'
-import type { StretchSegment } from './stretchRamp'
+import { getStretchCompletionSec, type StretchSegment } from './stretchRamp'
 
 export interface BoundaryAudioOffsets {
   // boundaryStartSec is the session-elapsed seconds at the start of the upcoming
@@ -171,22 +171,22 @@ export function walkFutureCues(args: {
  * cues still play while walkFutureCues' `>=` trim drops the cue at the boundary
  * (where the end chord fires).
  *
- *   - Stretch (segments present): the final segment's endSec — the source
- *     getStretchFrame.isComplete uses. Infinity (open-ended cool-down) → undefined.
+ *   - Stretch (segments present): getStretchCompletionSec(segments) — the cool-down's
+ *     partial endSec rounded up to the cycle. The same boundary getStretchFrame's
+ *     isComplete uses. Infinity (open-ended cool-down) → undefined.
  *   - HRV (no segments): getCompletionSec(plan) — totalSec rounded up to the cycle.
  *     Open-ended (totalSec === null) → undefined.
  *
- * Returning `plan.totalSec` here instead would (HRV) silence the rounded-up final
- * cycle and (Stretch) trim at the unrelated resonant-tab duration rather than the
- * ramp's own end. `undefined` means "no trim" (open-ended sessions never complete).
+ * Returning the raw endSec/totalSec here instead would silence the held-open final
+ * cycle's cues (and fire the end chord mid-breath). `undefined` means "no trim"
+ * (open-ended sessions never complete).
  */
 export function resolveTargetSec(
   plan: BreathingPlan,
   segments: StretchSegment[] | undefined,
 ): number | undefined {
   if (segments !== undefined) {
-    const finalEndSec = segments.at(-1)?.endSec
-    return finalEndSec === undefined || finalEndSec === Infinity ? undefined : finalEndSec
+    return getStretchCompletionSec(segments) ?? undefined
   }
   return getCompletionSec(plan) ?? undefined
 }
