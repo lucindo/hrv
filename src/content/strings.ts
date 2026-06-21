@@ -89,6 +89,9 @@ export interface UiStrings {
       readonly holdTargetLabel: string
       readonly rampDurationLabel: string
       readonly holdOpenEndedLabel: string
+      readonly roundsToggleLabel: string
+      readonly roundsCountLabel: string
+      readonly restBetweenLabel: string
     }
     readonly nkControls: {
       readonly roundsLabel: string
@@ -319,6 +322,9 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         holdTargetLabel: 'Settle',
         rampDurationLabel: 'Stretch',
         holdOpenEndedLabel: '∞',
+        roundsToggleLabel: 'Rounds',
+        roundsCountLabel: 'Number of rounds',
+        restBetweenLabel: 'Rest between rounds',
       },
       nkControls: {
         roundsLabel: 'Rounds',
@@ -523,6 +529,9 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         holdTargetLabel: 'Estabilizar',
         rampDurationLabel: 'Progressão',
         holdOpenEndedLabel: '∞',
+        roundsToggleLabel: 'Rodadas',
+        roundsCountLabel: 'Número de rodadas',
+        restBetweenLabel: 'Descanso entre rodadas',
       },
       nkControls: {
         roundsLabel: 'Rodadas',

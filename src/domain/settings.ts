@@ -74,13 +74,22 @@ export const INHALE_MIN = 10
 export const INHALE_MAX = 50
 
 // Rounds bounds. 1 = off (single block); 2–10 when rounds mode is on. The stored
-// range is 1–10; the form's "on" options (2–10) live with the form, not here.
+// range is 1–10; the form's "on" stepper offers 2–10 (RESONANT_ROUNDS_OPTIONS).
 export const RESONANT_ROUNDS_MIN = 1
 export const RESONANT_ROUNDS_MAX = 10
 
 // Rest length between rounds, in minutes.
 export const REST_MINUTES_MIN = 1
 export const REST_MINUTES_MAX = 10
+
+// Stepper options shown when rounds mode is on (2–10; "off" is the toggle = 1).
+export const RESONANT_ROUNDS_OPTIONS = [2, 3, 4, 5, 6, 7, 8, 9, 10] as const satisfies readonly number[]
+
+// Rest-minutes stepper options.
+export const REST_MINUTES_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as const satisfies readonly number[]
+
+// Default rounds count when the toggle is first switched on (operator decision).
+export const ROUNDS_ON_DEFAULT = 2
 
 // Discrete inhale-share presets shown when advanced is off (the former 50:50…20:80
 // RatioLabel set). exhale% is always 100 - inhale%.
