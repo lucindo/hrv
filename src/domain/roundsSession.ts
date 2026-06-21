@@ -50,7 +50,8 @@ export interface RoundsTimeline {
   readonly restSec: number
   readonly leadInSec: number
   readonly roundsTotal: number
-  readonly totalSec: number        // completion = final work block's cycle-aligned end
+  readonly configuredWorkSec: number // per-round duration as set (drives the readout countdown)
+  readonly totalSec: number          // completion = final work block's cycle-aligned end
 }
 
 /**
@@ -98,7 +99,8 @@ export function buildRoundsTimeline(settings: SessionSettings, leadInSec: number
   const inhaleSec = cycleSec * (inhaleShare / 100)
   const exhaleSec = cycleSec * ((100 - inhaleShare) / 100)
   const restSec = restMinutes * SEC_PER_MINUTE
-  const cyclesPerBlock = Math.ceil((durationMinutes * SEC_PER_MINUTE) / cycleSec)
+  const configuredWorkSec = durationMinutes * SEC_PER_MINUTE
+  const cyclesPerBlock = Math.ceil(configuredWorkSec / cycleSec)
   const workBlockSec = cyclesPerBlock * cycleSec
 
   const workSegments: RoundWorkSegment[] = []
@@ -132,6 +134,7 @@ export function buildRoundsTimeline(settings: SessionSettings, leadInSec: number
     restSec,
     leadInSec,
     roundsTotal: rounds,
+    configuredWorkSec,
     totalSec: lastSeg.endSec,
   }
 }
@@ -150,7 +153,7 @@ export function getRoundsFrame(timeline: RoundsTimeline, elapsedSec: number): Ro
   const safeElapsedSec = Math.max(0, elapsedSec)
   const remainingSec = Math.max(0, totalSec - safeElapsedSec)
   const isComplete = safeElapsedSec >= totalSec
-  const ctx = { roundsTotal, remainingSec, isComplete }
+  const ctx = { roundsTotal, remainingSec, isComplete, configuredWorkSec: timeline.configuredWorkSec }
 
   for (const seg of workSegments) {
     if (safeElapsedSec < seg.startSec) {
@@ -193,6 +196,7 @@ interface FrameCtx {
   roundsTotal: number
   remainingSec: number
   isComplete: boolean
+  configuredWorkSec: number
 }
 
 function workFrame(seg: RoundWorkSegment, safeElapsedSec: number, ctx: FrameCtx): RoundsSessionFrame {
@@ -220,7 +224,9 @@ function workFrame(seg: RoundWorkSegment, safeElapsedSec: number, ctx: FrameCtx)
     roundPhase: 'work',
     restRemainingSec: 0,
     roundLeadInDigit: null,
-    workRemainingSec: Math.max(0, seg.endSec - safeElapsedSec),
+    // Count down the configured duration; hold at 0 while the rounded-up final
+    // cycle finishes (block end ≥ configured end).
+    workRemainingSec: Math.max(0, seg.startSec + ctx.configuredWorkSec - safeElapsedSec),
   }
 }
 

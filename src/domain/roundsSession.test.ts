@@ -89,4 +89,14 @@ describe('getRoundsFrame', () => {
   it('counts overall remaining down across rests', () => {
     expect(getRoundsFrame(t, 100).remainingSec).toBe(83)
   })
+
+  it('work countdown starts at the configured duration and holds 0 through the rounded-up cycle', () => {
+    // bpm 5.5 → block rounds up to 65.4545 s, but the readout counts the configured 60 s.
+    const t55 = buildRoundsTimeline({ ...BASE, bpm: 5.5 }, LEAD_IN)
+    expect(t55.workSegments[0]?.endSec).toBeCloseTo(65.4545, 3)
+    expect(getRoundsFrame(t55, 0).workRemainingSec).toBe(60)
+    expect(getRoundsFrame(t55, 60).workRemainingSec).toBe(0)
+    // Still inside the block (last cycle finishing) — countdown stays at 0.
+    expect(getRoundsFrame(t55, 64).workRemainingSec).toBe(0)
+  })
 })
