@@ -599,7 +599,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       },
       about: {
         versionLabel: 'Versão',
-        sourceLinkText: 'Código-fonte',
+        sourceLinkText: 'Código',
       },
       themes: {
         light: 'Claro',
