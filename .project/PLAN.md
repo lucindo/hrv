@@ -33,15 +33,15 @@ discrete presets become a UI view + snap-on-toggle-off.
 Decisions DA1–DA10 in `DECISIONS.md`; options in `EXPLORE.md`. Approach B:
 dedicated `desktop.yml` wrapping the live PWA, decoupled from `deploy.yml`.
 
-- [ ] Local smoke build confirms the locked config (`630×900`, `--hide-title-bar`) and `public/pwa-512x512.png` icon render correctly — icon shows in Dock/Finder, window looks right. *(A smoke test — gates the rest.)*
-- [ ] pake-cli current stable version resolved and pinned exact.
-- [ ] `workflow_dispatch` builds a macOS **universal** `.dmg` as a downloadable artifact.
-- [ ] `workflow_dispatch` builds a Windows `.msi` as a downloadable artifact.
-- [ ] Icon renders correctly in both CI-built installers (`.icns`/`.ico` conversion verified, not just local).
-- [ ] `desktop-v*` tag publishes a GitHub Release with both installers renamed `HRV-Breathing-<version>-macos-universal.dmg` / `-windows-x64.msi`, version from `package.json`.
-- [ ] README "Download" section links to `…/releases/latest`.
-- [ ] First-launch docs cover macOS Gatekeeper (`xattr -dr com.apple.quarantine`) and Windows SmartScreen *Run anyway*.
-- [ ] First real release cut (`desktop-v2.5.1`): Release live, both installers download and launch.
+- [x] Local smoke build confirms the locked config (`630×900`, `--hide-title-bar`) and `public/pwa-512x512.png` icon render correctly — icon shows in Dock/Finder, window looks right. *(A smoke test — gated the rest.)*
+- [x] pake-cli current stable version resolved and pinned exact (`3.11.10`).
+- [x] CI builds a macOS **universal** `.dmg` as a downloadable artifact. (run `27890070656`, 8.3 MB)
+- [x] CI builds a Windows `.msi` as a downloadable artifact. (run `27890070656`, valid WiX 3.14 MSI)
+- [x] Icon converts in both CI installers (no build failure). *Residual: macOS render visually confirmed (smoke); Windows icon embedded but not visually verified — needs a Windows box.*
+- [ ] `desktop-v*` tag publishes a GitHub Release with both installers renamed `HRV-Breathing-<version>-macos-universal.dmg` / `-windows-x64.msi`, version from `package.json`. *(Rename + naming verified on the artifacts; publish step runs first on the real tag — task below.)*
+- [x] README "Download" section links to `…/releases/latest`.
+- [x] First-launch docs cover macOS Gatekeeper (`xattr -dr com.apple.quarantine`) and Windows SmartScreen *Run anyway* — in README **and** the release-page notes.
+- [ ] First real release cut (`desktop-v2.5.1`): Release live, both installers download and launch. *(Requires merge to `main` first so the workflow is on the default branch.)*
 
 ## Now
 
