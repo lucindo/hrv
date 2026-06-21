@@ -88,15 +88,24 @@ jobs:
             echo "v=0.0.0-dev" >> "$GITHUB_OUTPUT"
           fi
 
+      # Retry: macOS bundle_dmg.sh is intermittently flaky in CI (hdiutil/Finder race) —
+      # it fails with no output while the same image + command succeeds on a re-run.
+      # Cargo's target/ persists across attempts, so a retry only re-bundles, not rebuilds.
       - name: Build with Pake
         shell: bash
         run: |
-          npx --yes "pake-cli@${PAKE_VERSION}" "$APP_URL" \
-            --name "$APP_NAME" \
-            --icon public/pwa-512x512.png \
-            --width 630 --height 900 \
-            --hide-title-bar \
-            ${{ matrix.pake_extra }}
+          attempt=1; max=3
+          until npx --yes "pake-cli@${PAKE_VERSION}" "$APP_URL" \
+                  --name "$APP_NAME" \
+                  --icon public/pwa-512x512.png \
+                  --width 630 --height 900 \
+                  --hide-title-bar \
+                  ${{ matrix.pake_extra }}; do
+            if [ "$attempt" -ge "$max" ]; then
+              echo "pake build failed after $max attempts" >&2; exit 1
+            fi
+            attempt=$((attempt + 1)); echo "pake build failed; retry $attempt/$max..." >&2; sleep 5
+          done
 
       - name: Rename installer
         shell: bash
