@@ -292,14 +292,9 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
       if (closed) return null // closed engine has no meaningful projection.
       // Cues schedule even while muted (they play silently through masterGain=0).
 
-      // Facade over the internal schedule(when, cue) dispatch.
-      // 3 ticks at +0/+1/+2 + first In cue at +3. Track each so mid-lead-in mute
-      // can fade them out — schedule()'s switch arms do the activeCues.add
-      // bookkeeping. The countdown beep is the shared scheduleCountdownTick —
-      // the same beep the Navi Kriya countdown uses — and honours the session timbre.
-      schedule(startAudioTime + 0 * LEAD_IN_TICK_INTERVAL_SEC, { kind: 'lead-in-tick' })
-      schedule(startAudioTime + 1 * LEAD_IN_TICK_INTERVAL_SEC, { kind: 'lead-in-tick' })
-      schedule(startAudioTime + 2 * LEAD_IN_TICK_INTERVAL_SEC, { kind: 'lead-in-tick' })
+      // 3 countdown ticks at +0/+1/+2 (shared with scheduleLeadInTicks), then the
+      // first In cue at +3.
+      engine.scheduleLeadInTicks(startAudioTime)
       // First In cue at +3. Pass the upcoming In-phase duration so the decay envelope
       // stretches with the phase length at low BPM (App.tsx boundary scheduler does the
       // same for every subsequent cue). plan.inhaleSec is seconds-shaped at the source —
@@ -312,8 +307,9 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
 
     scheduleLeadInTicks(startAudioTime: number): void {
       if (closed) return
-      // Ticks only — the next block's first In cue comes from the lookahead, so
-      // scheduling it here too would double-strike the boundary.
+      // The 3 countdown ticks at +0/+1/+2 s — the shared scheduleCountdownTick beep
+      // (same as Navi Kriya), honouring the session timbre. scheduleLeadIn adds the
+      // first In cue at +3; the between-rounds caller leaves the In to the lookahead.
       schedule(startAudioTime + 0 * LEAD_IN_TICK_INTERVAL_SEC, { kind: 'lead-in-tick' })
       schedule(startAudioTime + 1 * LEAD_IN_TICK_INTERVAL_SEC, { kind: 'lead-in-tick' })
       schedule(startAudioTime + 2 * LEAD_IN_TICK_INTERVAL_SEC, { kind: 'lead-in-tick' })
