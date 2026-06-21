@@ -60,6 +60,8 @@ export interface UiStrings {
       readonly stageHoldInitial: string
       readonly stageRamp: string
       readonly stageHoldTarget: string
+      readonly rest: string
+      readonly roundOf: (current: number, total: number) => string
     }
     readonly settingsForm: {
       readonly ariaLabel: string
@@ -288,6 +290,8 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         stageHoldInitial: 'Warm-up',
         stageRamp: 'Stretch',
         stageHoldTarget: 'Settle',
+        rest: 'Rest',
+        roundOf: (c, t) => `Round ${String(c)} of ${String(t)}`,
       },
       settingsForm: {
         ariaLabel: 'Session settings',
@@ -490,6 +494,8 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         stageHoldInitial: 'Aquecimento',
         stageRamp: 'Progressão',
         stageHoldTarget: 'Estabilizar',
+        rest: 'Descanso',
+        roundOf: (c, t) => `Rodada ${String(c)} de ${String(t)}`,
       },
       settingsForm: {
         ariaLabel: 'Configurações da sessão',
