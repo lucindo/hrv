@@ -30,19 +30,22 @@ discrete presets become a UI view + snap-on-toggle-off.
 
 ## Now
 
-**State** — SHIPPED. Advanced precise-control merged to `main` (PR #3, `4b447ca`)
-and released as **v2.5** (`898843a` bump to 2.5.0; `d31a242` set v2.5 official;
-tag `v2.5`). Feature branch deleted. Working tree clean; `main` @ `d31a242`,
-`package.json` 2.5.0.
+**State** — SHIPPED & DEPLOYED. **v2.5.1** released: stretch completion now holds to
+the end of the final breath cycle like HRV (PR #5; decision SC-1 in DECISIONS.md).
+`package.json` 2.5.1; `v2.5` tag moved + deployed live to lucindo.github.io/hrv/.
+Also landed: `.project/DEPLOYMENT.md` release runbook, and CI actions bumped to
+Node-24 runtimes (`06e809d`). Working tree clean; `main` @ `06e809d`.
 
-**Next** — Nothing pending. Pick up new work, or one of the optional follow-ups
-below.
+**Next** — Nothing pending. Pick up new work, or an optional follow-up below.
 
-**Open questions** — None blocking. Optional tiny follow-ups (operator gave no
-reply, safe to skip): OM-pace "s" unit is hardcoded (locale-neutral, not in
-`strings.ts`); Stretch in-session caption uses `toFixed(1)` (1 dp) vs
-`formatTrimmed` (2 dp) elsewhere — offered to unify.
+**Open questions** — None blocking.
+- CI bump partially verified: `checkout@v6`/`setup-node@v6`/`upload-artifact@v7` ran
+  clean on a dispatch; the 4 Pages-chain actions (`download-artifact@v8`,
+  `configure-pages@v6`, `upload-pages-artifact@v5`, `deploy-pages@v5`) were skipped
+  (`assemble-and-deploy` skips on `workflow_dispatch`) — full proof comes on the next
+  `v*` tag deploy; same versions already run end-to-end in `lucindo/pb`.
+- Cosmetic, no operator reply: OM-pace "s" unit hardcoded (not in `strings.ts`);
+  Stretch in-session caption `toFixed(1)` vs `formatTrimmed` (2 dp) elsewhere.
 
-**Notes** — Q11 coerce-snap resolved as the Q6 toggle-off reconcile
-(`useSnapToPresets`), updating live state immediately with no coerce-signature
-change. Decisions: `.project/DECISIONS.md` (Q1–Q11).
+**Notes** — Release/deploy mechanics now documented in `.project/DEPLOYMENT.md`
+(tag = `vX.Y`, patches move the tag, `versions.json.official` drives root).
