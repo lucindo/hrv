@@ -107,13 +107,23 @@ jobs:
             attempt=$((attempt + 1)); echo "pake build failed; retry $attempt/$max..." >&2; sleep 5
           done
 
+      # Pake copies <appname>.<target> into the workspace, but slugifies the name on
+      # Linux ("hrv-breathing.deb") and lowercases AppImage — so match by extension
+      # (nocaseglob: *.AppImage ⇢ hrv-breathing.appimage) rather than guessing the name.
       - name: Rename installer
         shell: bash
         env:
           VERSION: ${{ steps.ver.outputs.v }}
           EXT: ${{ matrix.ext }}
           PLATFORM: ${{ matrix.platform }}
-        run: mv "${APP_NAME}.${EXT}" "HRV-Breathing-${VERSION}-${PLATFORM}.${EXT}"
+        run: |
+          shopt -s nullglob nocaseglob
+          built=( *."${EXT}" )
+          shopt -u nocaseglob
+          if [ "${#built[@]}" -ne 1 ]; then
+            echo "expected exactly one *.${EXT} in workspace, found: ${built[*]:-none}" >&2; exit 1
+          fi
+          mv "${built[0]}" "HRV-Breathing-${VERSION}-${PLATFORM}.${EXT}"
 
       - uses: actions/upload-artifact@v7
         with:
