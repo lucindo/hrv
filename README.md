@@ -80,6 +80,23 @@ A pill switcher at the top of the page moves between three practices; each keeps
 
 ---
 
+## Desktop apps
+
+Native desktop builds wrap the same app in a lightweight [Pake](https://github.com/tw93/pake) (Tauri) window — **macOS** (universal, Intel + Apple Silicon) and **Windows** (x64). They load the live site, so the app stays up to date automatically; there's nothing to update by hand. Linux isn't built yet.
+
+**[Download the latest release →](https://github.com/lucindo/hrv/releases/latest)**
+
+The builds are **unsigned**, so the first launch needs one extra step:
+
+- **macOS** — if you see "HRV Breathing is damaged", clear the quarantine flag, then open normally:
+  ```bash
+  xattr -dr com.apple.quarantine "/Applications/HRV Breathing.app"
+  ```
+  (or right-click the app → **Open**).
+- **Windows** — at the SmartScreen prompt, click **More info → Run anyway**.
+
+---
+
 ## Tech
 
 - React 19 + TypeScript, built with Vite.
