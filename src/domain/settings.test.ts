@@ -286,17 +286,18 @@ describe('isValidRampDuration (STRETCH-03, D-07)', () => {
   })
 })
 
-// SessionSettings is now standard-only (3 fields)
 describe('SessionSettings and validateSettings (D-01, D-02, STRETCH-03)', () => {
-  it('DEFAULT_SETTINGS has exactly bpm, inhaleShare, durationMinutes — no mode field', () => {
+  it('DEFAULT_SETTINGS carries the base fields plus rounds (off) and restMinutes', () => {
     expect(DEFAULT_SETTINGS).not.toHaveProperty('mode')
     expect(DEFAULT_SETTINGS).toHaveProperty('bpm')
     expect(DEFAULT_SETTINGS).toHaveProperty('inhaleShare')
     expect(DEFAULT_SETTINGS).toHaveProperty('durationMinutes')
+    expect(DEFAULT_SETTINGS.rounds).toBe(1)
+    expect(DEFAULT_SETTINGS.restMinutes).toBe(5)
   })
 
-  it('validateSettings accepts valid standard settings (3 fields only)', () => {
-    const valid: SessionSettings = { bpm: 5.5, inhaleShare: 40, durationMinutes: 10 }
+  it('validateSettings accepts valid settings', () => {
+    const valid: SessionSettings = { bpm: 5.5, inhaleShare: 40, durationMinutes: 10, rounds: 1, restMinutes: 5 }
     expect(() => validateSettings(valid)).not.toThrow()
     const result = validateSettings(valid)
     expect(result.bpm).toBe(5.5)
@@ -305,18 +306,42 @@ describe('SessionSettings and validateSettings (D-01, D-02, STRETCH-03)', () => 
   })
 
   it('validateSettings throws RangeError for invalid bpm', () => {
-    const bad: SessionSettings = { bpm: 999, inhaleShare: 40, durationMinutes: 10 }
+    const bad: SessionSettings = { bpm: 999, inhaleShare: 40, durationMinutes: 10, rounds: 1, restMinutes: 5 }
     expect(() => validateSettings(bad)).toThrow(RangeError)
   })
 
   it('validateSettings throws RangeError for invalid inhaleShare', () => {
-    const bad: SessionSettings = { bpm: 5.5, inhaleShare: 99, durationMinutes: 10 }
+    const bad: SessionSettings = { bpm: 5.5, inhaleShare: 99, durationMinutes: 10, rounds: 1, restMinutes: 5 }
     expect(() => validateSettings(bad)).toThrow(RangeError)
   })
 
   it('validateSettings throws RangeError for invalid durationMinutes', () => {
-    const bad: SessionSettings = { bpm: 5.5, inhaleShare: 40, durationMinutes: 7 }
+    const bad: SessionSettings = { bpm: 5.5, inhaleShare: 40, durationMinutes: 7, rounds: 1, restMinutes: 5 }
     expect(() => validateSettings(bad)).toThrow(RangeError)
+  })
+
+  it('validateSettings accepts rounds 2–10 with a finite duration', () => {
+    const rounds: SessionSettings = { bpm: 5.5, inhaleShare: 40, durationMinutes: 5, rounds: 3, restMinutes: 5 }
+    expect(() => validateSettings(rounds)).not.toThrow()
+  })
+
+  it('validateSettings throws for rounds outside 1–10 and rest outside 1–10', () => {
+    const tooManyRounds: SessionSettings = { bpm: 5.5, inhaleShare: 40, durationMinutes: 5, rounds: 11, restMinutes: 5 }
+    expect(() => validateSettings(tooManyRounds)).toThrow(RangeError)
+    const fractionalRounds: SessionSettings = { bpm: 5.5, inhaleShare: 40, durationMinutes: 5, rounds: 2.5, restMinutes: 5 }
+    expect(() => validateSettings(fractionalRounds)).toThrow(RangeError)
+    const badRest: SessionSettings = { bpm: 5.5, inhaleShare: 40, durationMinutes: 5, rounds: 2, restMinutes: 0 }
+    expect(() => validateSettings(badRest)).toThrow(RangeError)
+  })
+
+  it('validateSettings throws when rounds mode pairs with an open-ended duration', () => {
+    const bad: SessionSettings = { bpm: 5.5, inhaleShare: 40, durationMinutes: 'open-ended', rounds: 2, restMinutes: 5 }
+    expect(() => validateSettings(bad)).toThrow(RangeError)
+  })
+
+  it('validateSettings allows open-ended when rounds is off (1)', () => {
+    const single: SessionSettings = { bpm: 5.5, inhaleShare: 40, durationMinutes: 'open-ended', rounds: 1, restMinutes: 5 }
+    expect(() => validateSettings(single)).not.toThrow()
   })
 })
 
@@ -415,13 +440,13 @@ describe('nearestOption', () => {
 })
 
 describe('snapSessionSettingsToPresets', () => {
-  it('snaps off-grid bpm and inhaleShare to nearest presets', () => {
-    const snapped = snapSessionSettingsToPresets({ bpm: 3.35, inhaleShare: 37, durationMinutes: 10 })
-    expect(snapped).toEqual({ bpm: 3.5, inhaleShare: 40, durationMinutes: 10 })
+  it('snaps off-grid bpm and inhaleShare to nearest presets, preserving rounds config', () => {
+    const snapped = snapSessionSettingsToPresets({ bpm: 3.35, inhaleShare: 37, durationMinutes: 10, rounds: 3, restMinutes: 5 })
+    expect(snapped).toEqual({ bpm: 3.5, inhaleShare: 40, durationMinutes: 10, rounds: 3, restMinutes: 5 })
   })
 
   it('returns the same reference when already on-grid', () => {
-    const onGrid: SessionSettings = { bpm: 5.5, inhaleShare: 40, durationMinutes: 10 }
+    const onGrid: SessionSettings = { bpm: 5.5, inhaleShare: 40, durationMinutes: 10, rounds: 1, restMinutes: 5 }
     expect(snapSessionSettingsToPresets(onGrid)).toBe(onGrid)
   })
 })

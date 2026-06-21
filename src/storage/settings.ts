@@ -13,6 +13,8 @@ import {
   isValidBpm,
   isValidInhaleShare,
   isValidDuration,
+  isValidResonantRounds,
+  isValidRestMinutes,
   type SessionSettings,
 } from '../domain/settings'
 
@@ -20,10 +22,17 @@ import { asRecord, readEnvelope, writeEnvelope, type StorageDeps } from './stora
 
 export function coerceSettings(raw: unknown): SessionSettings {
   const r = asRecord(raw)
+  const durationMinutes = isValidDuration(r.durationMinutes) ? r.durationMinutes : DEFAULT_SETTINGS.durationMinutes
+  const rounds = isValidResonantRounds(r.rounds) ? r.rounds : DEFAULT_SETTINGS.rounds
+  // Rounds mode needs a finite duration; a corrupt/hand-edited open-ended+rounds
+  // pair would never advance, so disable rounds rather than discard the duration.
+  const safeRounds = rounds > 1 && durationMinutes === 'open-ended' ? 1 : rounds
   return {
-    bpm:             isValidBpm(r.bpm)                  ? r.bpm             : DEFAULT_SETTINGS.bpm,
-    inhaleShare:     isValidInhaleShare(r.inhaleShare)  ? r.inhaleShare     : DEFAULT_SETTINGS.inhaleShare,
-    durationMinutes: isValidDuration(r.durationMinutes) ? r.durationMinutes : DEFAULT_SETTINGS.durationMinutes,
+    bpm:             isValidBpm(r.bpm)                 ? r.bpm         : DEFAULT_SETTINGS.bpm,
+    inhaleShare:     isValidInhaleShare(r.inhaleShare) ? r.inhaleShare : DEFAULT_SETTINGS.inhaleShare,
+    durationMinutes,
+    rounds:          safeRounds,
+    restMinutes:     isValidRestMinutes(r.restMinutes) ? r.restMinutes : DEFAULT_SETTINGS.restMinutes,
   }
 }
 

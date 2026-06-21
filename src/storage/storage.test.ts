@@ -98,17 +98,17 @@ describe('writeEnvelope', () => {
   })
 
   it('preserves on-disk version when reading; stamps STATE_VERSION on write', () => {
-    // Seed a v5 envelope (simulates a future schema written by a newer build
-    // in another tab). Must be > STATE_VERSION (4) to exercise the future-version
+    // Seed a v6 envelope (simulates a future schema written by a newer build
+    // in another tab). Must be > STATE_VERSION (5) to exercise the future-version
     // guard. `prefs` is the forward-compat probe — the spread must let it survive
     // the readEnvelope round-trip.
     window.localStorage.setItem(STATE_KEY, JSON.stringify({
-      version: 5, settings: { bpm: 4 }, prefs: { theme: 'dark' },
+      version: 6, settings: { bpm: 4 }, prefs: { theme: 'dark' },
     }))
-    // STORAGE-01: readEnvelope returns the on-disk numeric version (5),
-    // NOT STATE_VERSION (4). The known settings subtree round-trips.
+    // STORAGE-01: readEnvelope returns the on-disk numeric version (6),
+    // NOT STATE_VERSION (5). The known settings subtree round-trips.
     const env = readEnvelope()
-    expect(env.version).toBe(5)
+    expect(env.version).toBe(6)
     expect(env.settings).toEqual({ bpm: 4 })
     // STORAGE-01: unknown top-level fields survive the read (positive forward-compat
     // coverage). Type-cast required because Envelope.prefs is not statically declared.
@@ -116,22 +116,22 @@ describe('writeEnvelope', () => {
     // would not be caught by the post-write disk-dump check.
     expect((env as unknown as Record<string, unknown>).prefs)
       .toEqual({ theme: 'dark' })
-    // STORAGE-02: disk version 5 > STATE_VERSION 4 → write refused.
+    // STORAGE-02: disk version 6 > STATE_VERSION 5 → write refused.
     // The caller's `version: 1` does NOT require an `as any` cast because
     // Envelope.version is widened to `number`.
     writeEnvelope({ version: 1, settings: { bpm: 5 } })
-    // Disk unchanged: the refused write left the v5 envelope intact.
+    // Disk unchanged: the refused write left the v6 envelope intact.
     const rawAfter = window.localStorage.getItem(STATE_KEY)
     expect(rawAfter).not.toBeNull()
     // Reason: rawAfter non-null asserted by expect().not.toBeNull() above.
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    expect(JSON.parse(rawAfter!) as unknown).toMatchObject({ version: 5, settings: { bpm: 4 } })
+    expect(JSON.parse(rawAfter!) as unknown).toMatchObject({ version: 6, settings: { bpm: 4 } })
   })
 
   it('writeEnvelope refuses to overwrite a future-version on-disk envelope (STORAGE-02)', () => {
-    // Seed a v5-only envelope (no known subtrees) to isolate the version guard.
-    // v5 > STATE_VERSION (4) makes it a genuine future schema.
-    window.localStorage.setItem(STATE_KEY, JSON.stringify({ version: 5 }))
+    // Seed a v6-only envelope (no known subtrees) to isolate the version guard.
+    // v6 > STATE_VERSION (5) makes it a genuine future schema.
+    window.localStorage.setItem(STATE_KEY, JSON.stringify({ version: 6 }))
     // Caller attempts to land 99-session stats on top of the v5 envelope.
     // The 99-session probe gives the negative assertion something concrete
     // to test — if the guard fails, the stats subtree appears on disk.
@@ -144,12 +144,12 @@ describe('writeEnvelope', () => {
         lastSessionDurationSeconds: null,
       },
     })
-    // Silent refusal: disk envelope unchanged at version: 5.
+    // Silent refusal: disk envelope unchanged at version: 6.
     const rawAfter = window.localStorage.getItem(STATE_KEY)
     expect(rawAfter).not.toBeNull()
     // Reason: rawAfter non-null asserted by expect().not.toBeNull() above.
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    expect(JSON.parse(rawAfter!) as unknown).toMatchObject({ version: 5 })
+    expect(JSON.parse(rawAfter!) as unknown).toMatchObject({ version: 6 })
     // Negative: 99-session probe was NOT written.
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(JSON.parse(rawAfter!) as unknown).not.toMatchObject({ stats: { totalSessions: 99 } })
@@ -311,8 +311,8 @@ describe('migrateEnvelope v2→v3 (Phase 34 STRETCH-03)', () => {
     expect(out.practices).toEqual(v3Envelope.practices)
   })
 
-  it('STATE_VERSION is 4', () => {
-    expect(STATE_VERSION).toBe(4)
+  it('STATE_VERSION is 5', () => {
+    expect(STATE_VERSION).toBe(5)
   })
 })
 
@@ -378,11 +378,13 @@ describe('migrateEnvelope v1→v3 chained (HOUSE-09)', () => {
     expect(twice).toEqual(once)
   })
 
-  it('STATE_VERSION is 4 (ladder terminal)', () => {
-    // Locks the test against silent ladder extension — if a future v4→v5 step
+  it('STATE_VERSION is 5 (ladder terminal)', () => {
+    // Locks the test against silent ladder extension — if a future v5→v6 step
     // ships, this assertion fails and forces the HOUSE-09 regression to be
-    // re-evaluated against the new terminal.
-    expect(STATE_VERSION).toBe(4)
+    // re-evaluated against the new terminal. The v4→v5 step is additive (rounds /
+    // restMinutes via coercer defaults), so the chained migration above is
+    // unaffected — migrateEnvelope adds no v5 rewrite branch.
+    expect(STATE_VERSION).toBe(5)
   })
 })
 

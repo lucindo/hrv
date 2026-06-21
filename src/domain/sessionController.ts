@@ -77,6 +77,8 @@ export function startStretchSession(
     bpm: stretchSettings.initialBpm,
     inhaleShare: stretchSettings.inhaleShare,
     durationMinutes: 'open-ended',
+    rounds: 1,
+    restMinutes: 5,
   }
   const plan = createBreathingPlan(leadInSettings)
   // buildStretchSegments takes a single StretchSettings arg

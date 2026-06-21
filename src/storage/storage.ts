@@ -19,7 +19,11 @@ export const STATE_KEY = 'hrv:state:v1'
 // STATE_VERSION bumped 3→4: migrateEnvelope converts ratio labels ('40:60') to
 // numeric inhaleShare (resonant + stretch) and omLength ('medium') to numeric
 // omSeconds (naviKriya) — the advanced precise-control number model.
-export const STATE_VERSION = 4 as const
+// Bumped 4→5: resonant settings gained `rounds` / `restMinutes`. Purely additive —
+// coerceSettings supplies defaults for the absent fields, so no migrateEnvelope
+// rewrite branch is needed; the bump only arms the downgrade guard so an older
+// build can't strip the new fields on write.
+export const STATE_VERSION = 5 as const
 
 export interface StorageDeps {
   now?: () => number       // defaults to Date.now (consumed by stats.ts / format.ts)
