@@ -22,8 +22,8 @@ jobs:
       pkg_version: ${{ steps.read.outputs.pkg_version }}
       pkg_version_short: ${{ steps.read.outputs.pkg_version_short }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 20
           cache: npm
@@ -62,8 +62,8 @@ jobs:
     outputs:
       official: ${{ steps.read.outputs.official }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 20
       - id: read
@@ -93,10 +93,10 @@ jobs:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: ${{ github.ref_name }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 20
           cache: npm
@@ -107,7 +107,7 @@ jobs:
         env:
           PKG_VERSION_SHORT: ${{ needs.validate-version.outputs.pkg_version_short }}
         run: npx vite build --base="/hrv/${PKG_VERSION_SHORT}/"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: build-current
           path: dist
@@ -124,17 +124,17 @@ jobs:
         # needs them).
         tag: ['v1.5']
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: ${{ matrix.tag }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 20
           cache: npm
       - run: npm ci
       - name: Build archive tag at versioned subpath
         run: npx vite build --base=/hrv/${{ matrix.tag }}/
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: build-archive-${{ matrix.tag }}
           path: dist
@@ -147,17 +147,17 @@ jobs:
     needs: read-manifest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: ${{ needs.read-manifest.outputs.official }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 20
           cache: npm
       - run: npm ci
       - name: Build official tag at root
         run: npx vite build --base=/hrv/
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: build-root
           path: dist
@@ -177,7 +177,7 @@ jobs:
       - name: Create assembly directory
         run: mkdir -p site
       - name: Download all build artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: artifacts
       - name: Assemble site (root + archives + current)
@@ -213,21 +213,21 @@ jobs:
             echo "build-current artifact absent (workflow_dispatch, no pushed tag) — skipping current-tag stage"
           fi
           ls -la site/
-      - uses: actions/configure-pages@v5
+      - uses: actions/configure-pages@v6
         with:
           enablement: true
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: site
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
 
   append-versions-json:
     needs: assemble-and-deploy
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: main
           fetch-depth: 0
@@ -235,7 +235,7 @@ jobs:
           # GITHUB_TOKEN, operator supplies secrets.VERSIONS_JSON_PAT (fine-grained,
           # contents:write on this repo).
           token: ${{ secrets.VERSIONS_JSON_PAT || secrets.GITHUB_TOKEN }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 20
       - name: Append pushed tag to versions.json
