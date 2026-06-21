@@ -64,10 +64,13 @@ describe('StatsPage', () => {
     expect(screen.getByText('Navi')).toBeInTheDocument()
   })
 
-  it('shows the rounds field only for Navi Kriya', () => {
+  it('labels HRV by rounds and shows the roundsCompleted field for Navi Kriya', () => {
     renderPage()
-    expect(screen.getAllByText(STRINGS.fields.rounds)).toHaveLength(1)
-    expect(screen.getByText('12')).toBeInTheDocument()
+    // "Rounds" now labels two rows: the resonant count (1 session == 1 round) and
+    // Navi's roundsCompleted field. Stretch + Navi keep the "Sessions" label.
+    expect(screen.getAllByText(STRINGS.fields.rounds)).toHaveLength(2)
+    expect(screen.getAllByText(STRINGS.fields.sessions)).toHaveLength(2)
+    expect(screen.getByText('12')).toBeInTheDocument()  // Navi roundsCompleted
   })
 
   it('renders "—" for a practice with no sessions yet', () => {

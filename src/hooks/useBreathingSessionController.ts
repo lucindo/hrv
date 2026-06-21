@@ -273,6 +273,13 @@ export function useBreathingSessionController({
   // This is the ONLY ms-shaped value emitted from this hook; everywhere else in
   // the running-session chain is seconds-shaped end-to-end.
   const completedAtSec = state.status === 'complete' ? state.completedAtSec : null
+  // Rounds completed by a finished rounds practice — narrowed here (the union access
+  // is invalid on Idle) so the record effect reads a primitive. null for non-rounds
+  // and early-ended practices → they count as 1 round.
+  const completedRoundsTotal =
+    state.status === 'complete' && state.roundsTimeline !== null
+      ? state.roundsTimeline.roundsTotal
+      : null
   const runningSnapshotRefStable = session.runningSnapshotRef
   useEffect(() => {
     if (state.status === 'running') return
@@ -303,13 +310,16 @@ export function useBreathingSessionController({
       if (activePractice === 'stretch') {
         recordStretchSession(elapsedMs, isComplete)
       } else {
-        recordResonantSession(elapsedMs, isComplete)
+        // A completed rounds practice counts all its rounds; a single block or an
+        // early-ended practice counts 1.
+        recordResonantSession(elapsedMs, isComplete, {}, completedRoundsTotal ?? 1)
       }
       recordedSessionKeyRef.current = snap.key
     }
   }, [
     state.status,
     completedAtSec,
+    completedRoundsTotal,
     runningSnapshotRefStable,
     activePractice,
     audioStop,

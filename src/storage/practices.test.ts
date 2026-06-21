@@ -267,6 +267,16 @@ describe('recordResonantSession (Pitfall 3 / T-30-08)', () => {
     expect(recordResonantSession(Number.NaN, true).totalSessions).toBe(0)
     expect(recordResonantSession(-100, true).totalSessions).toBe(0)
   })
+
+  it('adds the rounds count to totalSessions (a completed 3-round practice = +3 rounds)', () => {
+    const next = recordResonantSession(900_000, true, { now: () => 1 }, 3)
+    expect(next.totalSessions).toBe(3)
+    expect(loadPractices().resonant.stats.totalSessions).toBe(3)
+  })
+
+  it('defaults to +1 round for a single-block session', () => {
+    expect(recordResonantSession(40_000, true, { now: () => 1 }).totalSessions).toBe(1)
+  })
 })
 
 describe('recordNaviKriyaSession (NK-08 / D-13 / T-31-07 / T-31-08)', () => {

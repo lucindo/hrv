@@ -246,6 +246,11 @@ function recordPracticeSession(
   isComplete: boolean,
   deps: StorageDeps,
   roundsCompleted?: number,
+  // How much to add to totalSessions. Default 1 (one practice). Resonant passes the
+  // number of rounds completed so its totalSessions becomes a ROUND count (a single
+  // block is 1 round; an N-round practice is N) — displayed as "Rounds". Old records
+  // (1 per session) read correctly since 1 session == 1 round.
+  sessionCount = 1,
 ): PersistedStats {
   const env = readEnvelope(deps)
   // Read the target slice's stats through the coercer (the arithmetic below needs
@@ -266,7 +271,7 @@ function recordPracticeSession(
   const elapsedSeconds = Math.max(0, Math.floor(elapsedMs / 1000))
   const now = deps.now ?? Date.now
   const next: PersistedStats = {
-    totalSessions: stats.totalSessions + 1,
+    totalSessions: stats.totalSessions + sessionCount,
     totalElapsedSeconds: stats.totalElapsedSeconds + elapsedSeconds,
     lastSessionAtMs: now(),
     lastSessionDurationSeconds: elapsedSeconds,
@@ -299,8 +304,12 @@ export function recordResonantSession(
   elapsedMs: number,
   isComplete: boolean,
   deps: StorageDeps = {},
+  // Rounds completed by this practice (1 for a single block / non-rounds session;
+  // N for a completed N-round practice). Accumulated into totalSessions as the
+  // displayed "Rounds" count.
+  roundsCount = 1,
 ): PersistedStats {
-  return recordPracticeSession('resonant', elapsedMs, isComplete, deps)
+  return recordPracticeSession('resonant', elapsedMs, isComplete, deps, undefined, roundsCount)
 }
 
 export function recordStretchSession(
