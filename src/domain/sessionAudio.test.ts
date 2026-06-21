@@ -601,8 +601,9 @@ describe('resolveRoundsCueAction', () => {
     expect(actionAt(320)).toEqual({ kind: 'rest' })
   })
 
-  it('suppresses cues during the lead-in (visual-only 3-2-1)', () => {
-    expect(actionAt(361)).toEqual({ kind: 'lead-in' })
+  it('schedules the 3-2-1 ticks during the lead-in (start of the lead-in window)', () => {
+    // lead-in window for block_2 is [360, 363); ticks start at block.start − leadIn = 363 − 3.
+    expect(actionAt(361)).toEqual({ kind: 'lead-in', ticksStartAudioTime: ANCHOR + 360 })
   })
 
   it('resumes work cues for the second block after the gap', () => {

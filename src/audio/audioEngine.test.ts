@@ -120,6 +120,22 @@ describe('audioEngine', () => {
     await engine.close()
   })
 
+  it('scheduleLeadInTicks schedules 3 ticks at t/+1/+2 with NO In cue (between-rounds lead-in)', async () => {
+    const tickSpy = vi.spyOn(nkCueSynth, 'scheduleCountdownTick')
+    const inSpy = vi.spyOn(cueSynth, 'scheduleInCueForTimbre')
+    const engine = await createAudioEngine({ timbre: 'bowl' })
+
+    engine.scheduleLeadInTicks(5)
+
+    expect(tickSpy).toHaveBeenCalledTimes(3)
+    expect(tickSpy.mock.calls[0]?.[1]).toBe(5)
+    expect(tickSpy.mock.calls[1]?.[1]).toBe(6)
+    expect(tickSpy.mock.calls[2]?.[1]).toBe(7)
+    expect(inSpy).not.toHaveBeenCalled() // first In comes from the lookahead, not here
+
+    await engine.close()
+  })
+
   it('scheduleLeadIn returns the audioTime of the first In cue (= startAudioTime + 3)', async () => {
     const engine = await createAudioEngine({ timbre: 'bowl' })
     const firstInCueTime = engine.scheduleLeadIn(7, samplePlan)

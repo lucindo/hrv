@@ -123,6 +123,7 @@ export function useBreathingSessionController({
   const audioTopUpLookahead = audio.topUpLookahead
   const audioCancelFutureCues = audio.cancelFutureCues
   const audioPlayEndChord = audio.playEndChord
+  const audioScheduleLeadInTicks = audio.scheduleLeadInTicks
   const audioStatus = audio.audioStatus
   const audioResume = audio.resume
   // audioMuted drives the mute/resume toggle (onMuteOrResumeClick). It does NOT
@@ -383,8 +384,12 @@ export function useBreathingSessionController({
         audioTopUpLookahead(action.cues)
       } else if (action.kind === 'rest') {
         audioPlayEndChord()
+      } else {
+        // lead-in: breath cues stay cancelled; schedule the audible 3-2-1 ticks
+        // (the visual digit comes from the frame). currentFrame is per-phase-stable,
+        // so this fires once on entering the lead-in.
+        audioScheduleLeadInTicks(action.ticksStartAudioTime)
       }
-      // lead-in: visual-only (the 3-2-1 digit comes from the frame); cues stay cancelled.
       return
     }
 
@@ -429,7 +434,7 @@ export function useBreathingSessionController({
     // for the single-tick lag case which produces the minimal 5ms flam.
     audioCancelFutureCues()
     audioTopUpLookahead(cues)
-  }, [phase, session.currentFrame, audioTopUpLookahead, audioCancelFutureCues, audioPlayEndChord, stretchSegmentsForTopUp, roundsTimelineForTopUp])
+  }, [phase, session.currentFrame, audioTopUpLookahead, audioCancelFutureCues, audioPlayEndChord, audioScheduleLeadInTicks, stretchSegmentsForTopUp, roundsTimelineForTopUp])
 
   useEffect(() => {
     return () => {

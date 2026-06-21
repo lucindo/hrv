@@ -233,8 +233,8 @@ function activeWorkSegment(timeline: RoundsTimeline, cycleIndex: number): RoundW
  *   - work    → top up cues for the CURRENT block only (trimmed at the block's end so
  *               the lookahead floor can't leak a cue into the rest gap).
  *   - rest    → suppress cues (silent) + ring the round-boundary end chord.
- *   - lead-in → suppress cues (the 3-2-1 is visual-only; the first In breath cue of
- *               the next block resumes audio).
+ *   - lead-in → suppress breath cues, but schedule the 3-2-1 ticks (ticksStartAudioTime);
+ *               the next block's first In breath cue resumes audio via the work branch.
  *
  * Pure — the controller dispatches the action to audio calls. roundPhase is always set
  * on a rounds frame; an absent/other value defaults to the work branch defensively.
@@ -242,7 +242,7 @@ function activeWorkSegment(timeline: RoundsTimeline, cycleIndex: number): RoundW
 export type RoundsCueAction =
   | { kind: 'work'; cues: FutureCue[] }
   | { kind: 'rest' }
-  | { kind: 'lead-in' }
+  | { kind: 'lead-in'; ticksStartAudioTime: number }
 
 export function resolveRoundsCueAction(args: {
   timeline: RoundsTimeline
@@ -255,7 +255,11 @@ export function resolveRoundsCueAction(args: {
   const { timeline, frame, audioAnchor, plan, lookaheadWindowSec, minCues } = args
 
   if (frame.roundPhase === 'rest') return { kind: 'rest' }
-  if (frame.roundPhase === 'lead-in') return { kind: 'lead-in' }
+  if (frame.roundPhase === 'lead-in') {
+    // The 3 ticks land in the lead-in window [block.startSec - leadInSec, block.startSec).
+    const upcoming = activeWorkSegment(timeline, frame.cycleIndex)
+    return { kind: 'lead-in', ticksStartAudioTime: audioAnchor + upcoming.startSec - timeline.leadInSec }
+  }
 
   const active = activeWorkSegment(timeline, frame.cycleIndex)
   const cues = walkFutureCues({
