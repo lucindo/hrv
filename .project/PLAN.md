@@ -38,29 +38,32 @@ dedicated `desktop.yml` wrapping the live PWA, decoupled from `deploy.yml`.
 - [x] CI builds a macOS **universal** `.dmg` as a downloadable artifact. (run `27890070656`, 8.3 MB)
 - [x] CI builds a Windows `.msi` as a downloadable artifact. (run `27890070656`, valid WiX 3.14 MSI)
 - [x] Icon converts in both CI installers (no build failure). *Residual: macOS render visually confirmed (smoke); Windows icon embedded but not visually verified — needs a Windows box.*
-- [ ] `desktop-v*` tag publishes a GitHub Release with both installers renamed `HRV-Breathing-<version>-macos-universal.dmg` / `-windows-x64.msi`, version from `package.json`. *(Rename + naming verified on the artifacts; publish step runs first on the real tag — task below.)*
+- [x] `desktop-v*` tag publishes a GitHub Release with both installers renamed `HRV-Breathing-<version>-macos-universal.dmg` / `-windows-x64.msi`, version from `package.json`. *(Verified: Release `desktop-v2.5.1` published with both renamed assets.)*
 - [x] README "Download" section links to `…/releases/latest`.
 - [x] First-launch docs cover macOS Gatekeeper (`xattr -dr com.apple.quarantine`) and Windows SmartScreen *Run anyway* — in README **and** the release-page notes.
-- [ ] First real release cut (`desktop-v2.5.1`): Release live, both installers download and launch. *(Requires merge to `main` first so the workflow is on the default branch.)*
+- [x] First real release cut (`desktop-v2.5.1`): Release live, both installers attached, `releases/latest` resolves. (run `27890468068`; macOS launch confirmed via earlier smoke test, Windows launch unverified — no Windows box.)
 
 ## Now
 
-**State** — SHIPPED & DEPLOYED. **v2.5.1** released: stretch completion now holds to
-the end of the final breath cycle like HRV (PR #5; decision SC-1 in DECISIONS.md).
-`package.json` 2.5.1; `v2.5` tag moved + deployed live to lucindo.github.io/hrv/.
-Also landed: `.project/DEPLOYMENT.md` release runbook, and CI actions bumped to
-Node-24 runtimes (`06e809d`). Working tree clean; `main` @ `06e809d`.
+**State** — Desktop apps SHIPPED. PR #6 merged to `main`; Release **`desktop-v2.5.1`**
+live with `HRV-Breathing-2.5.1-{macos-universal.dmg,windows-x64.msi}` attached and
+`releases/latest` resolving. New `desktop.yml` (Pake → mac universal + win, publishes
+on `desktop-v*` tags) is decoupled from the web `deploy.yml`; flow documented in
+`DEPLOYMENT.md`, decisions DA1–DA10 in `DECISIONS.md`. Working tree clean; `main`
+pushed to origin.
 
-**Next** — Nothing pending. Pick up new work, or an optional follow-up below.
+**Next** — Nothing pending. Optional only: visually verify the Windows `.msi`
+icon/launch on a real Windows box.
 
 **Open questions** — None blocking.
-- CI bump partially verified: `checkout@v6`/`setup-node@v6`/`upload-artifact@v7` ran
-  clean on a dispatch; the 4 Pages-chain actions (`download-artifact@v8`,
-  `configure-pages@v6`, `upload-pages-artifact@v5`, `deploy-pages@v5`) were skipped
-  (`assemble-and-deploy` skips on `workflow_dispatch`) — full proof comes on the next
-  `v*` tag deploy; same versions already run end-to-end in `lucindo/pb`.
-- Cosmetic, no operator reply: OM-pace "s" unit hardcoded (not in `strings.ts`);
-  Stretch in-session caption `toFixed(1)` vs `formatTrimmed` (2 dp) elsewhere.
+- Windows `.msi` icon render + launch never visually confirmed (no Windows box) — the
+  build embedded the icon and produced a valid WiX MSI.
+- Deferred by decision: macOS padded-squircle icon (DA6), Linux leg (DA2), code
+  signing (DA4).
+- Pre-existing (web deploy): the 3 Pages-only actions (`configure-pages@v6`,
+  `upload-pages-artifact@v5`, `deploy-pages@v5`) prove out only on the next `v*` tag
+  deploy; `download-artifact@v8` has since run green in `desktop.yml`.
 
-**Notes** — Release/deploy mechanics now documented in `.project/DEPLOYMENT.md`
-(tag = `vX.Y`, patches move the tag, `versions.json.official` drives root).
+**Notes** — Two independent release pipelines now: web (`vX.Y` tag → Pages,
+`DEPLOYMENT.md`) and desktop (`desktop-v*` tag → GitHub Release, same doc's "Desktop
+releases" section).
