@@ -146,6 +146,7 @@ export function snapStretchSettingsToPresets(s: StretchSettings): StretchSetting
 }
 
 export const DURATION_OPTIONS = [
+  1, // TEMP: 1-min duration for faster rounds testing — revert before shipping
   5,
   10,
   15,
