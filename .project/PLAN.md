@@ -58,30 +58,27 @@ untouched. Rest starts only at each block's cycle-rounded end (existing completi
 - [x] Slice 3 — presentation: `RoundsReadout` ("Round X of N" + rest MM:SS); orb idles in rest/lead-in; 3-2-1 reuses OrbShape leadInDigit; i18n `readout.rest`/`roundOf`. (`b0c9514`)
 - [x] Slice 4 — settings form: Rounds toggle (dims count+rest), count 2–10, rest minutes; open-ended dropped when on; snap rounds→1 on off; i18n. (`d8f74c7`)
 - [x] Slice 5 — stats: resonant `totalSessions` counts rounds (+N completed / +1 else); StatsPage HRV row relabeled "Rounds"; history-preserving (1 session==1 round), no migration. (`df27414`)
+- [x] Slice 6 — testing-feedback iteration (operator-tested end-to-end, all confirmed): settings reorder (Duration below Ratio) + dim full off-state rows + always-visible total-time hint (`8560f28`/`b6dae1e`/`f030963`); per-round countdown that starts at the configured duration and holds 0 through the rounded-up last cycle (`8560f28`/`99b3101`); "Round X of N" folded into the work caption line (no start shift) + rest screen shows only the countdown (`8560f28`/`5faee2f`); between-rounds 3-2-1 now BEEPS via the `scheduleLeadInTicks` engine primitive (`7b07473`). Temp 1-min duration added for testing then reverted (`cbc2c20`/`ba66216`). Plus pt-BR "Código-fonte"→"Código" mobile-overflow fix (`aa6752c`).
 
-Flagged simplifications (await operator call): (1) rounds-2+ lead-in is VISUAL-ONLY
-(no audio ticks — avoids a `scheduleLeadIn` first-In flam; `scheduleLeadInTicks` is the
-clean follow-up); (2) total-time stat INCLUDES rest (full wall-clock); (3) early-ended
-rounds practice counts as 1 round; (4) round-caption/rest-countdown placement is a
-first-pass — visual refinement pending operator review.
+Flagged simplifications — post-testing disposition: (1) RESOLVED — rounds-2+ lead-in now
+beeps (`scheduleLeadInTicks`, no first-In flam). (4) RESOLVED — caption folded into the
+work readout line, rest shows only the countdown, no layout shift. Still as-built (operator
+accepted): (2) total-time stat + settings hint INCLUDE rest (full wall-clock); (3) early-ended
+rounds practice counts as 1 round.
 
 ## Now
 
-**State** — Rounds feature CODE-COMPLETE on branch `feat/hrv-rounds` (7 commits,
-`97bf32e`→`df27414`; branched from `main` @ `f580209`). All 5 slices done; whole
-practice runs as one continuous single-clock session. `tsc` + lint clean, full suite
-**1418 passing**. NOT merged, NOT pushed. Working tree clean. (Desktop apps from the
-prior milestone remain SHIPPED — `desktop-v2.5.1` live.)
+**State** — Rounds feature DONE & operator-tested on branch `feat/hrv-rounds` (16 commits,
+`97bf32e`→`aa6752c`; branched from `main` @ `f580209`). All 6 slices complete; testing
+feedback iterated and confirmed correct; temp 1-min testing aid reverted. `tsc` + lint
+clean, full suite **1421 passing**. Working tree clean. NOT merged, NOT pushed.
+(Desktop apps from the prior milestone remain SHIPPED — `desktop-v2.5.1` live.)
 
-**Next** — Operator runs `npm run dev` and tests rounds end-to-end (HRV settings →
-Rounds on → 2 rounds / 1-min rest / 5-min duration → start). Then returns with
-testing feedback to iterate. Key things to confirm: audio stays in sync across the
-rest gap into round 2; silent rest + MM:SS countdown; end chord at each boundary;
-3-2-1 between rounds; "Round X of N"; stats add N rounds on a completed practice.
+**Next** — Open the PR for `feat/hrv-rounds` → `main` (GitHub issue #4) when the operator
+is ready. Nothing else outstanding on the feature.
 
-**Open questions** — Awaiting operator's testing feedback. The 4 flagged
-simplifications above (visual-only lead-in, total-time-includes-rest, early-end=1
-round, caption/countdown placement) are decisions to confirm or change after testing.
+**Open questions** — None blocking. Simplifications (2) total-time includes rest and
+(3) early-end counts as 1 round are accepted as-built; revisit only if desired.
 
 **Notes** — Prior milestone (desktop apps) unchanged: web (`vX.Y`→Pages) and desktop
 (`desktop-v*`→GitHub Release) pipelines both live; Windows `.msi` launch still
