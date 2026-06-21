@@ -47,9 +47,18 @@ jobs:
         with:
           targets: ${{ matrix.rust_targets }}
 
+      # Wrapper version = the tag (desktop-vX.Y.Z), decoupled from the app/package.json
+      # version. The app auto-updates via APP_URL, so a desktop release is cut only when
+      # the Pake shell changes — its version is whatever tag we push. Dispatch test runs
+      # have no tag, so they fall back to a dev marker.
       - id: ver
         shell: bash
-        run: echo "v=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/desktop-v* ]]; then
+            echo "v=${GITHUB_REF_NAME#desktop-v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "v=0.0.0-dev" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Build with Pake
         shell: bash
