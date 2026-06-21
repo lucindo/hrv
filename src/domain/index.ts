@@ -6,6 +6,7 @@
 export * from './breathingPlan'
 export * from './naviKriyaSession'
 export * from './naviKriyaSettings'
+export * from './roundsSession'
 export * from './sessionAudio'
 export * from './sessionController'
 export * from './sessionLifecycle'
