@@ -123,6 +123,21 @@ describe('SessionReadout — secondary content', () => {
     expect(screen.getByText(`1.29 ${EN_FORM_FIXTURE.bpmUnit} · 40:60`)).toBeInTheDocument()
   })
 
+  it('rounds work frame counts down the round and folds "Round X of N" into the secondary', () => {
+    const roundsFrame: SessionFrame = {
+      ...sampleFrame,
+      remainingSec: 183,
+      roundPhase: 'work',
+      roundNumber: 1,
+      roundsTotal: 2,
+      workRemainingSec: 60,
+    }
+    renderReadout({ frame: roundsFrame, status: 'running', bpm: 5.5, ratio: '40:60' })
+    expect(screen.getByText('1:00')).toBeInTheDocument() // per-round, not 3:03 (practice)
+    expect(screen.queryByText('3:03')).not.toBeInTheDocument()
+    expect(screen.getByText(`5.5 ${EN_FORM_FIXTURE.bpmUnit} · 40:60 · Round 1 of 2`)).toBeInTheDocument()
+  })
+
   it('stretch frame renders live currentBpm + stage in the secondary', () => {
     renderReadout({ frame: stretchFrame, status: 'running' })
     expect(screen.getByText(`5.5 ${EN_FORM_FIXTURE.bpmUnit} · Stretch`)).toBeInTheDocument()

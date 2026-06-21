@@ -40,7 +40,9 @@ export function BreathingSessionSurface({
         ringCue={ringCue}
         showCompletion={presentation.readout.showCompletionHeadline}
       />
-      {rounds !== null && (
+      {/* Work folds its "Round X of N" caption into the SessionReadout line below;
+          the standalone readout only owns the rest countdown + lead-in caption. */}
+      {rounds !== null && rounds.phase !== 'work' && (
         <RoundsReadout
           roundNumber={rounds.roundNumber}
           roundsTotal={rounds.roundsTotal}

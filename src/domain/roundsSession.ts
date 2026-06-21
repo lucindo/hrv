@@ -63,6 +63,8 @@ export interface RoundsSessionFrame extends SessionFrame {
   readonly roundPhase: RoundPhaseKind
   readonly restRemainingSec: number
   readonly roundLeadInDigit: 3 | 2 | 1 | null
+  // Current round's work countdown (0 in gaps). remainingSec stays whole-practice.
+  readonly workRemainingSec: number
 }
 
 /**
@@ -218,6 +220,7 @@ function workFrame(seg: RoundWorkSegment, safeElapsedSec: number, ctx: FrameCtx)
     roundPhase: 'work',
     restRemainingSec: 0,
     roundLeadInDigit: null,
+    workRemainingSec: Math.max(0, seg.endSec - safeElapsedSec),
   }
 }
 
@@ -245,6 +248,7 @@ function gapFrame(args: GapFrameArgs): RoundsSessionFrame {
     roundPhase: args.roundPhase,
     restRemainingSec: args.restRemainingSec,
     roundLeadInDigit: args.roundLeadInDigit,
+    workRemainingSec: 0,
   }
 }
 

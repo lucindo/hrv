@@ -56,6 +56,9 @@ describe('getRoundsFrame', () => {
     const atStart = getRoundsFrame(t, 0)
     expect(atStart).toMatchObject({ roundPhase: 'work', roundNumber: 1, phase: 'in', cycleIndex: 0, isComplete: false })
     expect(atStart.remainingSec).toBe(183)
+    // workRemainingSec counts down the current round (60 s block), not the practice.
+    expect(atStart.workRemainingSec).toBe(60)
+    expect(getRoundsFrame(t, 25).workRemainingSec).toBe(35)
 
     // 5 s into the first 10 s cycle → past the 4 s inhale → Out.
     expect(getRoundsFrame(t, 5)).toMatchObject({ roundPhase: 'work', phase: 'out', cycleIndex: 0 })
@@ -64,7 +67,7 @@ describe('getRoundsFrame', () => {
   })
 
   it('reports rest with a countdown in the gap after a block', () => {
-    expect(getRoundsFrame(t, 60)).toMatchObject({ roundPhase: 'rest', roundNumber: 2, restRemainingSec: 60 })
+    expect(getRoundsFrame(t, 60)).toMatchObject({ roundPhase: 'rest', roundNumber: 2, restRemainingSec: 60, workRemainingSec: 0 })
     expect(getRoundsFrame(t, 90)).toMatchObject({ roundPhase: 'rest', roundNumber: 2, restRemainingSec: 30 })
   })
 

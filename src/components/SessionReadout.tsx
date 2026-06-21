@@ -78,15 +78,25 @@ export function SessionReadout(props: SessionReadoutModeProps): ReactElement | n
 
   if (frame === null) return null
 
-  const primary = formatDuration(frame.remainingSec ?? frame.elapsedSec)
+  // Rounds work: count down the current round, not the whole practice, and fold
+  // the "Round X of N" caption into this line (no separate row → no layout shift).
+  const isRoundsWork = frame.roundPhase === 'work'
+  const primary = formatDuration(
+    isRoundsWork && frame.workRemainingSec !== undefined
+      ? frame.workRemainingSec
+      : frame.remainingSec ?? frame.elapsedSec,
+  )
 
   // Stretch path: currentBpm + stage are set on the frame. Format
   // "{currentBpm} {bpmUnit} · {stage}" — stage label rendered uppercase by
   // FeedbackTime's CSS.
   // HRV path: format "{bpm} {bpmUnit} · {ratio}" using the static settings.
-  const secondary = frame.currentBpm !== undefined && frame.stage !== undefined
+  const base = frame.currentBpm !== undefined && frame.stage !== undefined
     ? `${frame.currentBpm.toFixed(1)} ${bpmUnit} · ${stageText(frame.stage, strings)}`
     : `${formatTrimmed(bpm)} ${bpmUnit} · ${ratio}`
+  const secondary = isRoundsWork && frame.roundNumber !== undefined && frame.roundsTotal !== undefined
+    ? `${base} · ${strings.roundOf(frame.roundNumber, frame.roundsTotal)}`
+    : base
 
   return (
     <section aria-label={strings.readoutAriaLabel} className="w-full">

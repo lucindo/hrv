@@ -32,12 +32,15 @@ export interface SessionFrame {
   readonly stage?: StretchStage
   // Optional rounds-only fields — undefined for standard + stretch sessions.
   // roundLeadInDigit is non-null only during a lead-in window; restRemainingSec is
-  // > 0 only during a rest window. (Read surface for the controller + presentation.)
+  // > 0 only during a rest window. workRemainingSec is the CURRENT round's work
+  // countdown (remainingSec stays whole-practice). (Read surface for the
+  // controller + presentation.)
   readonly roundNumber?: number
   readonly roundsTotal?: number
   readonly roundPhase?: 'work' | 'rest' | 'lead-in'
   readonly restRemainingSec?: number
   readonly roundLeadInDigit?: 3 | 2 | 1 | null
+  readonly workRemainingSec?: number
 }
 
 export function getSessionFrame(plan: BreathingPlan, elapsedSec: number): SessionFrame {
