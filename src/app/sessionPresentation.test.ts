@@ -95,7 +95,7 @@ describe('breathing rounds presentation', () => {
     const model = present(live)
     expect(model.shape.frame).toBe(live)            // orb breathes during work
     expect(model.shape.leadInDigit).toBeNull()
-    expect(model.readout.rounds).toEqual({ roundNumber: 1, roundsTotal: 3, phase: 'work', restRemainingSec: 0, leadInDigit: null })
+    expect(model.readout.rounds).toEqual({ phase: 'work', restRemainingSec: 0, leadInDigit: null })
   })
 
   it('rest: orb idles and the rounds readout carries the rest countdown', () => {

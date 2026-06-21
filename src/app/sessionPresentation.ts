@@ -28,9 +28,9 @@ export interface BreathingPresentationInput {
 }
 
 // Rounds live state, derived from the running frame. Null for non-rounds sessions.
+// (Round number/total are read off the frame by SessionReadout — see its secondary
+// line — so they're not duplicated here.)
 export interface RoundsReadout {
-  roundNumber: number
-  roundsTotal: number
   phase: 'work' | 'rest' | 'lead-in'
   restRemainingSec: number
   leadInDigit: LeadInDigit | null
@@ -60,8 +60,6 @@ export function getBreathingPresentation(input: BreathingPresentationInput): Bre
   const rounds: RoundsReadout | null =
     isRunning && live != null && live.roundPhase !== undefined
       ? {
-        roundNumber: live.roundNumber ?? 1,
-        roundsTotal: live.roundsTotal ?? 1,
         phase: live.roundPhase,
         restRemainingSec: live.restRemainingSec ?? 0,
         leadInDigit: live.roundLeadInDigit ?? null,

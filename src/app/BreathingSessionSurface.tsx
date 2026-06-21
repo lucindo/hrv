@@ -40,16 +40,10 @@ export function BreathingSessionSurface({
         ringCue={ringCue}
         showCompletion={presentation.readout.showCompletionHeadline}
       />
-      {/* Work folds its "Round X of N" caption into the SessionReadout line below;
-          the standalone readout only owns the rest countdown + lead-in caption. */}
-      {rounds !== null && rounds.phase !== 'work' && (
-        <RoundsReadout
-          roundNumber={rounds.roundNumber}
-          roundsTotal={rounds.roundsTotal}
-          phase={rounds.phase}
-          restRemainingSec={rounds.restRemainingSec}
-          strings={readoutStrings}
-        />
+      {/* Rest shows only the countdown; work folds "Round X of N" into the
+          SessionReadout line below; lead-in is carried by the orb's 3-2-1. */}
+      {rounds !== null && rounds.phase === 'rest' && (
+        <RoundsReadout restRemainingSec={rounds.restRemainingSec} strings={readoutStrings} />
       )}
       {presentation.readout.isLeadInPlaceholder ? (
         <SessionReadout

@@ -4,47 +4,22 @@ import { formatDuration } from '../domain'
 import type { UiStrings } from '../content/strings'
 import { FeedbackTime } from './FeedbackTime'
 
-// Rounds adornment for the breathing surface: a "Round X of N" caption shown
-// throughout a rounds session, plus a big MM:SS rest countdown during the rest
-// gap between rounds (reusing FeedbackTime). During work the SessionReadout still
-// renders the remaining-time number alongside this caption; during rest there is
-// no SessionReadout — this is the live readout.
+// Rest adornment for the breathing surface: the big MM:SS rest countdown shown
+// during the gap between rounds (reusing FeedbackTime). The "Round X of N"
+// caption lives on the work readout's secondary line — not here — so the rest
+// screen matches the work readout's height (no layout shift on the transition).
 
 export interface RoundsReadoutProps {
-  roundNumber: number
-  roundsTotal: number
-  phase: 'work' | 'rest' | 'lead-in'
   restRemainingSec: number
   strings: UiStrings['practice']['readout']
 }
 
-export function RoundsReadout({
-  roundNumber,
-  roundsTotal,
-  phase,
-  restRemainingSec,
-  strings,
-}: RoundsReadoutProps): ReactElement {
+export function RoundsReadout({ restRemainingSec, strings }: RoundsReadoutProps): ReactElement {
   return (
-    <div className="flex w-full flex-col items-center">
-      <span
-        className="uppercase"
-        style={{
-          fontSize: 12,
-          fontWeight: 500,
-          letterSpacing: '0.16em',
-          color: 'var(--color-breathing-muted)',
-        }}
-      >
-        {strings.roundOf(roundNumber, roundsTotal)}
-      </span>
-      {phase === 'rest' && (
-        <FeedbackTime
-          primary={formatDuration(restRemainingSec)}
-          secondary={strings.rest}
-          ariaLabel={strings.announcementAriaLabel}
-        />
-      )}
-    </div>
+    <FeedbackTime
+      primary={formatDuration(restRemainingSec)}
+      secondary={strings.rest}
+      ariaLabel={strings.announcementAriaLabel}
+    />
   )
 }
