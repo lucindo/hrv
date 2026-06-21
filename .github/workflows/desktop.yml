@@ -36,6 +36,24 @@ jobs:
             ext: msi
             pake_extra: ""
             rust_targets: ""
+          # One Linux job per package format — deb (apt), rpm (Fedora/openSUSE), and
+          # AppImage (distro-agnostic) cover the main families. ubuntu-22.04: build on
+          # the oldest supported Ubuntu for wider glibc compat.
+          - os: ubuntu-22.04
+            platform: linux-x64
+            ext: deb
+            pake_extra: "--targets deb"
+            rust_targets: ""
+          - os: ubuntu-22.04
+            platform: linux-x64
+            ext: rpm
+            pake_extra: "--targets rpm"
+            rust_targets: ""
+          - os: ubuntu-22.04
+            platform: linux-x64
+            ext: AppImage
+            pake_extra: "--targets appimage"
+            rust_targets: ""
     steps:
       - uses: actions/checkout@v6
 
@@ -47,31 +65,70 @@ jobs:
         with:
           targets: ${{ matrix.rust_targets }}
 
+      # Tauri 2 (Pake's runtime) Linux build prerequisites — webkit2gtk-4.1 et al.;
+      # `rpm` for the rpm bundle, `patchelf` for the AppImage bundle.
+      - name: Install Linux build deps
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev libgtk-3-dev \
+            libayatana-appindicator3-dev librsvg2-dev patchelf rpm
+
+      # Wrapper version = the tag (desktop-vX.Y.Z), decoupled from the app/package.json
+      # version. The app auto-updates via APP_URL, so a desktop release is cut only when
+      # the Pake shell changes — its version is whatever tag we push. Dispatch test runs
+      # have no tag, so they fall back to a dev marker.
       - id: ver
         shell: bash
-        run: echo "v=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/desktop-v* ]]; then
+            echo "v=${GITHUB_REF_NAME#desktop-v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "v=0.0.0-dev" >> "$GITHUB_OUTPUT"
+          fi
 
+      # Retry: macOS bundle_dmg.sh is intermittently flaky in CI (hdiutil/Finder race) —
+      # it fails with no output while the same image + command succeeds on a re-run.
+      # Cargo's target/ persists across attempts, so a retry only re-bundles, not rebuilds.
       - name: Build with Pake
         shell: bash
         run: |
-          npx --yes "pake-cli@${PAKE_VERSION}" "$APP_URL" \
-            --name "$APP_NAME" \
-            --icon public/pwa-512x512.png \
-            --width 630 --height 900 \
-            --hide-title-bar \
-            ${{ matrix.pake_extra }}
+          attempt=1; max=3
+          until npx --yes "pake-cli@${PAKE_VERSION}" "$APP_URL" \
+                  --name "$APP_NAME" \
+                  --icon public/pwa-512x512.png \
+                  --width 630 --height 900 \
+                  --hide-title-bar \
+                  ${{ matrix.pake_extra }}; do
+            if [ "$attempt" -ge "$max" ]; then
+              echo "pake build failed after $max attempts" >&2; exit 1
+            fi
+            attempt=$((attempt + 1)); echo "pake build failed; retry $attempt/$max..." >&2; sleep 5
+          done
 
+      # Pake copies <appname>.<target> into the workspace, but slugifies the name on
+      # Linux ("hrv-breathing.deb") and lowercases AppImage — so match by extension
+      # (nocaseglob: *.AppImage ⇢ hrv-breathing.appimage) rather than guessing the name.
       - name: Rename installer
         shell: bash
         env:
           VERSION: ${{ steps.ver.outputs.v }}
           EXT: ${{ matrix.ext }}
           PLATFORM: ${{ matrix.platform }}
-        run: mv "${APP_NAME}.${EXT}" "HRV-Breathing-${VERSION}-${PLATFORM}.${EXT}"
+        run: |
+          shopt -s nullglob nocaseglob
+          built=( *."${EXT}" )
+          shopt -u nocaseglob
+          if [ "${#built[@]}" -ne 1 ]; then
+            echo "expected exactly one *.${EXT} in workspace, found: ${built[*]:-none}" >&2; exit 1
+          fi
+          mv "${built[0]}" "HRV-Breathing-${VERSION}-${PLATFORM}.${EXT}"
 
       - uses: actions/upload-artifact@v7
         with:
-          name: ${{ matrix.platform }}
+          # platform+ext: the three Linux formats share platform, so ext keeps it unique.
+          name: ${{ matrix.platform }}-${{ matrix.ext }}
           path: HRV-Breathing-*-${{ matrix.platform }}.${{ matrix.ext }}
           if-no-files-found: error
           retention-days: 7
@@ -93,13 +150,15 @@ jobs:
           REPO: ${{ github.repository }}
         run: |
           cat > notes.md <<'EOF'
-          Native desktop builds of HRV Breathing — macOS (universal) and Windows (x64).
+          Native desktop builds of HRV Breathing — macOS (universal), Windows (x64), and Linux x64 (.deb / .rpm / .AppImage).
 
           **Unsigned builds.** First launch:
           - **macOS** may report the app is "damaged". Run
             `xattr -dr com.apple.quarantine "/Applications/HRV Breathing.app"`,
             or right-click the app → Open.
           - **Windows** SmartScreen: click **More info → Run anyway**.
+          - **Linux** — pick your format: `.deb` (Debian/Ubuntu), `.rpm` (Fedora/openSUSE),
+            or `.AppImage` (any distro — `chmod +x` and run).
 
           The app loads the live site, so web content stays up to date automatically.
           EOF
