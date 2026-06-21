@@ -43,6 +43,20 @@ dedicated `desktop.yml` wrapping the live PWA, decoupled from `deploy.yml`.
 - [x] First-launch docs cover macOS Gatekeeper (`xattr -dr com.apple.quarantine`) and Windows SmartScreen *Run anyway* — in README **and** the release-page notes.
 - [x] First real release cut (`desktop-v2.5.1`): Release live, both installers attached, `releases/latest` resolves. (run `27890468068`; macOS launch confirmed via earlier smoke test, Windows launch unverified — no Windows box.)
 
+### Decouple version + add Linux — shipped as `desktop-v1.0.0` (merge `72e2f53`)
+
+Wrapper version decoupled from the app: it now comes from the `desktop-v*` tag, not
+`package.json`. The app loads the live URL, so web releases reach desktop automatically;
+a new installer is cut only when the Pake shell changes. `desktop-v2.5.1` deleted —
+`desktop-v1.0.0` is the sole desktop release. Three fixes the validation surfaced:
+
+- [x] Version from tag (`${GITHUB_REF_NAME#desktop-v}`, `0.0.0-dev` fallback on dispatch).
+- [x] Linux x64 across `.deb` / `.rpm` / `.AppImage` (one matrix entry per format, `--targets`).
+- [x] App icon → RGBA (`pwa-512x512.png`): Tauri's Linux build hard-requires it; mac/win bundlers don't.
+- [x] Retry the pake build: macOS `bundle_dmg.sh` is flaky (failed then passed on the SAME image+cmd).
+- [x] Rename installer by extension: pake slugifies the Linux name (`hrv-breathing.deb`) + lowercases AppImage.
+- [x] All 5 build + publish on the real tag (run `27911734616`); assets `HRV-Breathing-1.0.0-<platform>.<ext>`.
+
 ## Roadmap — Interval "Rounds" for HRV (`feat/hrv-rounds`, GitHub issue #4)
 
 HRV-only. Opt-in toggle splits a practice into N work blocks separated by a rest +
@@ -68,19 +82,18 @@ rounds practice counts as 1 round.
 
 ## Now
 
-**State** — Rounds feature SHIPPED. PR #7 merged to `main` @ `918d084` (true merge,
-all 22 commits preserved); GitHub issue #4 auto-closed. Post-merge cleanup landed a
-stray-file removal + two SSOT refactors (lead-in tick dedup; shared `SEC_PER_MINUTE`/
-`CLAMP_EPSILON_SEC` + `BreathSegment` extends). Version bumped to **2.6.0**; README
-documents Rounds. `tsc` + lint clean, full suite **1421 passing**.
+**State** — Two milestones SHIPPED. (1) Rounds: PR #7 merged @ `918d084`, web live as
+**v2.6** (`versions.json` official=v2.6, Pages deploy green); issue #4 closed. (2) Desktop
+**`desktop-v1.0.0`** merged @ `72e2f53` — wrapper version decoupled from the app (tag-driven),
+Linux added (`.deb`/`.rpm`/`.AppImage`), `desktop-v2.5.1` deleted so v1.0.0 is the sole
+desktop release. Both pipelines green; full suite **1421 passing**; tree clean.
 
-**Next** — Cutting the **v2.6** web release: `versions.json` official → `v2.6`,
-checkpoint, commit, tag `v2.6`, push to trigger the Pages release deploy. (Desktop
-release `desktop-v2.6.0` NOT cut — separate `desktop-v*` tag when wanted.)
+**Next** — Nothing outstanding. Future desktop installers only when the Pake shell changes
+(push a new `desktop-v*` tag); web releases reach desktop automatically via the live URL.
 
-**Open questions** — None blocking. Simplifications (2) total-time includes rest and
-(3) early-end counts as 1 round are accepted as-built; revisit only if desired.
+**Open questions** — None blocking. Rounds simplifications (2) total-time includes rest and
+(3) early-end counts as 1 round remain accepted as-built.
 
-**Notes** — Release tag form is short `vX.Y` (→ `v2.6`), not full SemVer. Desktop
-pipeline unchanged: `desktop-v2.5.1` live; Windows `.msi` launch still unverified
-(no Windows box).
+**Notes** — Tag forms: web short `vX.Y` (→ `v2.6`); desktop full SemVer `desktop-vX.Y.Z`
+(→ `desktop-v1.0.0`). Desktop launch still unverified on Windows + Linux (no boxes); macOS
+confirmed. macOS dmg bundling is flaky — the workflow retries the pake build (×3).
