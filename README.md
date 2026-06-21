@@ -54,7 +54,7 @@ Forrest is the source of inspiration for the practice; this app is **not affilia
 
 A pill switcher at the top of the page moves between three practices; each keeps its own settings and its own stats.
 
-- **HRV** — the core resonance-breathing timer. Configurable BPM (1 – 7), inhale/exhale ratio (50:50, 40:60, 30:70, 20:80), and duration (5 – 60 minutes or open-ended).
+- **HRV** — the core resonance-breathing timer. Configurable BPM (1 – 7), inhale/exhale ratio (50:50, 40:60, 30:70, 20:80), and duration (5 – 60 minutes or open-ended). An optional **Rounds** mode (Settings) splits the practice into 2 – 10 work blocks separated by a configurable rest, each round opening with a 3-2-1 lead-in.
 - **Stretch** — a guided BPM ramp: it opens with a Warm-up at an easier pace, ramps gradually toward a slower target BPM, and closes with a Settle, so the slowdown is gentle rather than abrupt. The Warm-up, ramp, and Settle durations are each configurable.
 - **Navi Kriya** — an OM-counting practice run in rounds, with a configurable front-OM count, OM pace, and an optional per-OM tick. The guide tracks the live count through each round's Front and Back phases rather than a breath clock.
 
