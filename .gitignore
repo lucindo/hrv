@@ -27,3 +27,8 @@ dist-ssr
 .claude/
 CLAUDE.md
 AGENTS.md
+
+# Pake desktop build artifacts (built in CI; never commit local runs)
+*.dmg
+*.msi
+*.AppImage

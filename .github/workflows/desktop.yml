@@ -1,0 +1,109 @@
+name: Build desktop apps
+
+# Wraps the live PWA in a Pake (Tauri) shell. Decoupled from deploy.yml on
+# purpose: the installed app loads the live URL, so web content auto-updates and
+# desktop releases are rare/independent of web releases.
+#   - workflow_dispatch : build installers as artifacts (test runs, no release)
+#   - push tag desktop-v*: build + publish a GitHub Release with the installers
+on:
+  push:
+    tags: ['desktop-v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  PAKE_VERSION: "3.11.10" # bump deliberately; pinned for reproducible builds
+  APP_URL: "https://lucindo.github.io/hrv/"
+  APP_NAME: "HRV Breathing"
+
+jobs:
+  build:
+    name: ${{ matrix.platform }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            platform: macos-universal
+            ext: dmg
+            pake_extra: "--multi-arch"
+            rust_targets: "aarch64-apple-darwin,x86_64-apple-darwin"
+          - os: windows-latest
+            platform: windows-x64
+            ext: msi
+            pake_extra: ""
+            rust_targets: ""
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust_targets }}
+
+      - id: ver
+        shell: bash
+        run: echo "v=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Build with Pake
+        shell: bash
+        run: |
+          npx --yes "pake-cli@${PAKE_VERSION}" "$APP_URL" \
+            --name "$APP_NAME" \
+            --icon public/pwa-512x512.png \
+            --width 630 --height 900 \
+            --hide-title-bar \
+            ${{ matrix.pake_extra }}
+
+      - name: Rename installer
+        shell: bash
+        env:
+          VERSION: ${{ steps.ver.outputs.v }}
+          EXT: ${{ matrix.ext }}
+          PLATFORM: ${{ matrix.platform }}
+        run: mv "${APP_NAME}.${EXT}" "HRV-Breathing-${VERSION}-${PLATFORM}.${EXT}"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.platform }}
+          path: HRV-Breathing-*-${{ matrix.platform }}.${{ matrix.ext }}
+          if-no-files-found: error
+          retention-days: 7
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/desktop-v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: installers
+          merge-multiple: true
+      - name: Publish GitHub Release
+        # TAG/REPO via env, never inlined into the shell (deploy.yml convention).
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          cat > notes.md <<'EOF'
+          Native desktop builds of HRV Breathing — macOS (universal) and Windows (x64).
+
+          **Unsigned builds.** First launch:
+          - **macOS** may report the app is "damaged". Run
+            `xattr -dr com.apple.quarantine "/Applications/HRV Breathing.app"`,
+            or right-click the app → Open.
+          - **Windows** SmartScreen: click **More info → Run anyway**.
+
+          The app loads the live site, so web content stays up to date automatically.
+          EOF
+          gh release create "$TAG" installers/* \
+            --repo "$REPO" \
+            --title "$TAG" \
+            --notes-file notes.md

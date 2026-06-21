@@ -364,3 +364,146 @@ segment table itself is unchanged (`endSec` still == requested total), so
 
 **Rationale:** Cross-practice consistency — a guided breath should never be cut
 mid-exhale. The sub-cycle overrun is the same accepted behavior HRV ships.
+
+---
+
+# Feature: Native desktop apps via Pake — grilling 2026-06-20
+
+Source: `/ds-explore --web` (`.project/EXPLORE.md`) → `/ds-grill-me`. Goal: ship
+downloadable native desktop builds (Pake = Tauri shell wrapping the live PWA at
+`https://lucindo.github.io/hrv/`), automated in CI, public downloads. No prior
+desktop/distribution decisions existed. Implementation on branch
+`feat/desktop-pake`.
+
+Key framing the decisions rest on: the Pake wrapper loads the **live URL**, so
+the web app auto-updates inside an installed desktop app regardless of binary
+version. The binary only changes when wrapper config changes (icon, size, name,
+Pake/Tauri bump) — so desktop releases are rare and genuinely independent of web
+releases.
+
+## DA1 — Integration shape
+
+**Q:** Build via Pake's own hosted Action and publish by hand (A), a dedicated
+workflow in this repo → GitHub Release (B), or couple desktop into the existing
+`vX.Y` web-release pipeline (C)?
+
+**Decision:** B, preceded by a one-off A smoke test (a local `pake … --icon`
+re-run on the Mac to validate the icon fix before any CI lands).
+
+**Rationale:** B is the only option giving repeatable, public, automated
+downloads without endangering the delicate `deploy.yml` (loop-guard / `[skip ci]`
+commit-back). C couples two release cadences that don't move together and bolts
+slow Rust builds onto a currently-fast deploy. The A smoke test de-risks the
+known icon gap cheaply.
+
+## DA2 — Platforms
+
+**Q:** macOS, Windows, Linux — which now?
+
+**Decision:** macOS + Windows now. Linux deferred.
+
+**Rationale:** mac+win covers the overwhelming majority of desktop users and
+keeps the first workflow simple/green. Linux is the only leg with real cost
+(Tauri system deps + deb/appimage/rpm/zst format sprawl) and is a trivial matrix
+addition later if a Linux user asks.
+
+## DA3 — macOS architecture
+
+**Q:** Universal (`--multi-arch`, Intel+ARM) or Apple-silicon-only?
+
+**Decision:** Universal.
+
+**Rationale:** Build-time cost is invisible (infrequent per-release build); the
+benefit is zero "won't open on my Intel Mac" reports.
+
+## DA4 — Signing & notarization
+
+**Q:** Ship unsigned with a documented workaround, or pay for Apple Developer ID
+($99/yr) + Windows cert and notarize in CI?
+
+**Decision:** Unsigned + documented first-launch workaround (macOS
+`xattr -dr com.apple.quarantine "/Applications/HRV Breathing.app"` /
+right-click→Open; Windows SmartScreen *More info → Run anyway*).
+
+**Rationale:** For a free, no-backend, no-revenue app, $99+/yr plus cert/secret
+plumbing isn't justified by the prompt-friction it removes. A two-line README
+note handles it; signing stays a later upgrade.
+
+## DA5 — Trigger & versioning
+
+**Q:** Manual dispatch only, a separate `desktop-v*` tag, or coupled to `vX.Y`?
+Does `--app-version` track `package.json`?
+
+**Decision:** `push: tags: desktop-v*` publishes the GitHub Release;
+`workflow_dispatch` is test-only (artifacts/draft, no public release).
+`--app-version` read from `package.json.version` at build time.
+
+**Rationale:** Fully decoupled from the `vX.Y` Pages tags → zero risk to
+`deploy.yml`. Single source of truth for version; desktop releases are rare so a
+separate counter isn't worth it.
+
+## DA6 — Icon source
+
+**Q:** Which master asset → per-platform icons?
+
+**Decision:** `--icon public/pwa-512x512.png`; let pake-cli convert to
+`.icns`/`.ico`. Padded macOS-squircle variant deferred as polish.
+
+**Rationale:** Already in-repo (checked out by the workflow), deterministic, no
+network, and the same icon the PWA installs with — single source of truth. The
+earlier "icon missing" was just from omitting `--icon` (failed favicon
+auto-fetch).
+
+## DA7 — Window chrome
+
+**Q:** Lock the test config? Add a min size?
+
+**Decision:** `--width 630 --height 900 --hide-title-bar`, no min-size.
+
+**Rationale:** The operator's validated config. The app is a mobile-first
+responsive PWA, so a small window reflows rather than breaks — a min-size guard
+isn't earned. `--hide-title-bar` is macOS-only; Windows shows a standard title
+bar (expected).
+
+## DA8 — Download surfacing & release mode
+
+**Q:** Where do users find downloads, and draft vs auto-publish?
+
+**Decision:** README "Download" section linking to `…/releases/latest`;
+`desktop-v*` tag auto-publishes the Release. No in-app / Pages-site download link
+in scope now.
+
+**Rationale:** `releases/latest` is a stable URL needing no per-version edits.
+The tag is the deliberate publish act. A Pages-site link touches locked-copy +
+i18n (EN/PT-BR) and design/copy review — a separate deliberate change, not a
+freebie to bundle here.
+
+## DA9 — pake-cli version
+
+**Q:** Pin an exact `pake-cli` version or float `@latest`?
+
+**Decision:** Pin exact `pake-cli@x.y.z` (version resolved when writing the
+workflow).
+
+**Rationale:** Reproducible builds; a Pake/Tauri release can't silently break or
+change the output of a build we run infrequently. Bumping the pin is a deliberate
+one-line change.
+
+## DA10 — Release asset names
+
+**Q:** Keep Pake's default `HRV Breathing.dmg`/`.msi` or rename on upload?
+
+**Decision:** Rename on upload to
+`HRV-Breathing-<version>-macos-universal.dmg` and
+`HRV-Breathing-<version>-windows-x64.msi` (version from `package.json`). In-app
+name stays "HRV Breathing".
+
+**Rationale:** Clean download URLs (no `%20`), self-describing filenames.
+
+## Open implementation risks (resolve while building, not decisions)
+
+- Resolve the current stable `pake-cli` version to pin (DA9).
+- macOS universal may need `rustup target add x86_64-apple-darwin` before
+  `--multi-arch`.
+- Confirm `.icns`/`.ico` conversion quality from the 512 png — the DA1 smoke test
+  covers this.
