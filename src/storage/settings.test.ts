@@ -77,10 +77,10 @@ describe('coerceSettings (D-15)', () => {
     expect((Object.prototype as Record<string, unknown>).polluted).toBeUndefined()
   })
 
-  // coerceSettings is standard-only (3 fields). Stretch ramp fields (mode, initialBpm,
+  // coerceSettings is resonant-only. Stretch ramp fields (mode, initialBpm,
   // targetBpm, warmUpMinutes, coolDownMinutes, rampDurationMinutes) live in coerceStretchSettings.
-  it('returns exactly { bpm, inhaleShare, durationMinutes } — no mode or ramp fields present', () => {
-    // A raw blob carrying old stretch fields should produce only the 3 standard fields.
+  it('returns exactly the resonant fields — no mode or ramp fields present', () => {
+    // A raw blob carrying old stretch fields should produce only the resonant fields.
     const rawWithRampFields = {
       bpm: 5.5,
       inhaleShare: 40,
@@ -93,8 +93,7 @@ describe('coerceSettings (D-15)', () => {
       rampDurationMinutes: 5,
     }
     const result = coerceSettings(rawWithRampFields)
-    // Only the 3 standard keys must be present.
-    expect(Object.keys(result).sort()).toEqual(['bpm', 'durationMinutes', 'inhaleShare'])
+    expect(Object.keys(result).sort()).toEqual(['bpm', 'durationMinutes', 'inhaleShare', 'restMinutes', 'rounds'])
     expect(result.bpm).toBe(5.5)
     expect(result.inhaleShare).toBe(40)
     expect(result.durationMinutes).toBe(10)
@@ -102,6 +101,27 @@ describe('coerceSettings (D-15)', () => {
     const asAny = result as unknown as Record<string, unknown>
     expect(asAny['mode']).toBeUndefined()
     expect(asAny['initialBpm']).toBeUndefined()
+  })
+
+  it('defaults rounds (off) and restMinutes when absent', () => {
+    expect(coerceSettings({ bpm: 5.5, inhaleShare: 40, durationMinutes: 10 }))
+      .toMatchObject({ rounds: 1, restMinutes: 5 })
+  })
+
+  it('preserves valid rounds + restMinutes', () => {
+    expect(coerceSettings({ bpm: 5.5, inhaleShare: 40, durationMinutes: 5, rounds: 3, restMinutes: 2 }))
+      .toMatchObject({ rounds: 3, restMinutes: 2 })
+  })
+
+  it('falls back per field for out-of-range rounds / restMinutes / fractional rounds', () => {
+    expect(coerceSettings({ bpm: 5.5, inhaleShare: 40, durationMinutes: 5, rounds: 11, restMinutes: 5 }).rounds).toBe(1)
+    expect(coerceSettings({ bpm: 5.5, inhaleShare: 40, durationMinutes: 5, rounds: 2.5, restMinutes: 5 }).rounds).toBe(1)
+    expect(coerceSettings({ bpm: 5.5, inhaleShare: 40, durationMinutes: 5, rounds: 2, restMinutes: 99 }).restMinutes).toBe(5)
+  })
+
+  it('disables rounds when paired with an open-ended duration (engine-invalid pair)', () => {
+    expect(coerceSettings({ bpm: 5.5, inhaleShare: 40, durationMinutes: 'open-ended', rounds: 3, restMinutes: 5 }))
+      .toMatchObject({ durationMinutes: 'open-ended', rounds: 1 })
   })
 })
 

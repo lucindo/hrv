@@ -3,6 +3,27 @@ import type { StretchStage } from './stretchRamp'
 
 export type BreathPhase = 'in' | 'out'
 
+// Minutes→seconds factor for cycle/duration math. Shared by the breathing plan,
+// stretch ramp, and rounds timeline.
+export const SEC_PER_MINUTE = 60
+
+// Pulls an exact segment boundary 1 ms inside the span so Math.floor(elapsed / cycleSec)
+// stays on the last real cycle index instead of rolling one past it. Shared by the
+// stretch and rounds per-segment frame walks.
+export const CLAMP_EPSILON_SEC = 0.001
+
+// The breath-segment fields the cue walk + per-segment frame math read. StretchSegment
+// and RoundWorkSegment both extend this, so walkFutureCues accepts either without a
+// stretch- or rounds-specific shape.
+export interface BreathSegment {
+  readonly startSec: number
+  readonly endSec: number
+  readonly cycleSec: number
+  readonly inhaleSec: number
+  readonly exhaleSec: number
+  readonly cycleBaseIndex: number
+}
+
 export interface SessionFrame {
   readonly phase: BreathPhase
   readonly phaseLabel: 'In' | 'Out'
@@ -18,6 +39,17 @@ export interface SessionFrame {
   readonly currentExhaleSec?: number
   readonly currentBpm?: number
   readonly stage?: StretchStage
+  // Optional rounds-only fields — undefined for standard + stretch sessions.
+  // roundLeadInDigit is non-null only during a lead-in window; restRemainingSec is
+  // > 0 only during a rest window. workRemainingSec is the CURRENT round's work
+  // countdown (remainingSec stays whole-practice). (Read surface for the
+  // controller + presentation.)
+  readonly roundNumber?: number
+  readonly roundsTotal?: number
+  readonly roundPhase?: 'work' | 'rest' | 'lead-in'
+  readonly restRemainingSec?: number
+  readonly roundLeadInDigit?: 3 | 2 | 1 | null
+  readonly workRemainingSec?: number
 }
 
 export function getSessionFrame(plan: BreathingPlan, elapsedSec: number): SessionFrame {

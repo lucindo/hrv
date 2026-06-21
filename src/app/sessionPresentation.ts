@@ -27,6 +27,15 @@ export interface BreathingPresentationInput {
   ratio: string
 }
 
+// Rounds live state, derived from the running frame. Null for non-rounds sessions.
+// (Round number/total are read off the frame by SessionReadout — see its secondary
+// line — so they're not duplicated here.)
+export interface RoundsReadout {
+  phase: 'work' | 'rest' | 'lead-in'
+  restRemainingSec: number
+  leadInDigit: LeadInDigit | null
+}
+
 export interface BreathingPresentation {
   shape: {
     cue: CueStyleId
@@ -40,15 +49,36 @@ export interface BreathingPresentation {
     showCompletionHeadline: boolean
     bpm: number
     ratio: string
+    rounds: RoundsReadout | null
   }
 }
 
 export function getBreathingPresentation(input: BreathingPresentationInput): BreathingPresentation {
+  const live = input.liveFrame
+  const isRunning = input.phase === 'running'
+  // A rounds session's running frame carries roundPhase; standard/stretch frames don't.
+  const rounds: RoundsReadout | null =
+    isRunning && live != null && live.roundPhase !== undefined
+      ? {
+        phase: live.roundPhase,
+        restRemainingSec: live.restRemainingSec ?? 0,
+        leadInDigit: live.roundLeadInDigit ?? null,
+      }
+      : null
+
   return {
     shape: {
       cue: input.sessionCue ?? input.liveCue,
-      frame: input.phase === 'running' ? input.liveFrame : null,
-      leadInDigit: input.phase === 'lead-in' ? input.leadInDigit : null,
+      // The orb breathes only during work (or a non-rounds running session); it idles
+      // through rest and the between-rounds lead-in.
+      frame: isRunning && (rounds === null || rounds.phase === 'work') ? live : null,
+      // Pre-session lead-in (round 1) uses the controller digit; rounds 2..N use the
+      // frame-derived digit. Both render through OrbShape's leadInDigit overlay.
+      leadInDigit: input.phase === 'lead-in'
+        ? input.leadInDigit
+        : rounds?.phase === 'lead-in'
+          ? rounds.leadInDigit
+          : null,
     },
     readout: {
       frame: input.leadInPlaceholderFrame ?? input.liveFrame,
@@ -57,6 +87,7 @@ export function getBreathingPresentation(input: BreathingPresentationInput): Bre
       showCompletionHeadline: input.status === 'complete' && !input.inSessionView,
       bpm: input.bpm,
       ratio: input.ratio,
+      rounds,
     },
   }
 }

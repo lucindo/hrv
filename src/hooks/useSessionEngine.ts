@@ -12,10 +12,12 @@ import {
   completeIfNeeded,
   endSession,
   extendTimedSession,
+  startRoundsSession,
   startSession,
   startStretchSession,
   type SessionState,
 } from '../domain/sessionController'
+import { LEAD_IN_DURATION_SEC } from '../audio/audioEngine'
 
 /**
  * Running-session snapshot exported for App-side consumption. The hook owns
@@ -240,11 +242,16 @@ export function useSessionEngine(
   // the memo body uses, so the memo and its deps stay in lock-step.
   const cycleKey = state.status === 'running' ? state.lastFrame.cycleIndex : null
   const phaseKey = state.status === 'running' ? state.lastFrame.phase : null
+  // roundPhase ('work' | 'rest' | 'lead-in') is undefined for standard + stretch
+  // sessions (→ null, no behavior change). For rounds it makes currentFrame fire at
+  // round-phase boundaries too — load-bearing for the lead-in → work transition,
+  // where cycleIndex AND phase are unchanged but cue scheduling must (re)start.
+  const roundPhaseKey = state.status === 'running' ? state.lastFrame.roundPhase ?? null : null
   const currentFrame = useMemo<SessionFrame | null>(
     () => (state.status === 'running' ? state.lastFrame : null),
-    // Reason: the useMemo body reads `state.lastFrame` only when `state.status === 'running'`; its identity is fully determined by `state.status`, `cycleIndex`, and `phase` (primitives surfaced as `cycleKey`/`phaseKey` above). Adding `state` to the dep array would defeat the per-phase-stable identity contract by re-memoizing on every rAF tick. The local-narrowing is itself the safe-harbor; the disable is annotated to document the intentional deviation from the exhaustive-deps rule.
+    // Reason: the useMemo body reads `state.lastFrame` only when `state.status === 'running'`; its identity is fully determined by `state.status`, `cycleIndex`, `phase`, and `roundPhase` (primitives surfaced above). Adding `state` to the dep array would defeat the per-phase-stable identity contract by re-memoizing on every rAF tick. The local-narrowing is itself the safe-harbor; the disable is annotated to document the intentional deviation from the exhaustive-deps rule.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [state.status, cycleKey, phaseKey],
+    [state.status, cycleKey, phaseKey, roundPhaseKey],
   )
 
   // Per-rAF live frame. Identity changes every render-cycle by design — visual
@@ -288,6 +295,12 @@ export function useSessionEngine(
       const sSettings = stretchSettingsRef.current
       if (sSettings !== null) {
         return startStretchSession(sSettings, currentState.selectedSettings, clock.now())
+      }
+
+      // Resonant with rounds > 1 runs the continuous rounds timeline; rounds === 1 is
+      // the standard single-block session.
+      if (currentState.selectedSettings.rounds > 1) {
+        return startRoundsSession(currentState.selectedSettings, clock.now(), LEAD_IN_DURATION_SEC)
       }
 
       return startSession(currentState.selectedSettings, clock.now())

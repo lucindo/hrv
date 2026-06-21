@@ -5,10 +5,14 @@ import {
   BPM_MAX,
   BPM_MIN,
   BPM_OPTIONS,
+  DEFAULT_SETTINGS,
   DURATION_OPTIONS,
   INHALE_MAX,
   INHALE_MIN,
   RATIO_INHALE_PRESETS,
+  RESONANT_ROUNDS_OPTIONS,
+  REST_MINUTES_OPTIONS,
+  ROUNDS_ON_DEFAULT,
   formatRatio,
   formatTrimmed,
   getNextDurationOption,
@@ -21,6 +25,7 @@ import { SettingsFormShell } from './SettingsFormShell'
 import { SettingsSegmentedRow } from './SettingsSegmentedRow'
 import { SettingsSlider } from './SettingsSlider'
 import { SettingsStepper } from './SettingsStepper'
+import { SettingsToggleRow } from './SettingsToggleRow'
 
 export interface ResonantSettingsFormProps {
   settings: SessionSettings
@@ -43,12 +48,32 @@ export function ResonantSettingsForm({
   const formatBpm = (value: number): string => `${formatTrimmed(value)} ${strings.bpmUnit}`
   const formatDuration = (value: DurationOption): string =>
     value === 'open-ended' ? strings.openEndedLabel : `${String(value)} ${strings.minutesUnit}`
+  const formatMinutes = (value: number): string => `${String(value)} ${strings.minutesUnit}`
 
   useSnapToPresets(advanced, settings, snapSessionSettingsToPresets, onChange)
 
   const updateSettings = (nextSettings: Partial<SessionSettings>): void => {
     onChange({ ...settings, ...nextSettings })
   }
+
+  const roundsOn = settings.rounds > 1
+
+  const onToggleRounds = (next: boolean): void => {
+    if (next) {
+      // Rounds need a finite per-round duration — snap an open-ended pick to the default.
+      const durationMinutes = settings.durationMinutes === 'open-ended'
+        ? DEFAULT_SETTINGS.durationMinutes
+        : settings.durationMinutes
+      updateSettings({ rounds: ROUNDS_ON_DEFAULT, durationMinutes })
+    } else {
+      updateSettings({ rounds: 1 })
+    }
+  }
+
+  // Open-ended is unavailable in rounds mode (a round that never completes can't advance).
+  const durationOptions: readonly DurationOption[] = roundsOn
+    ? DURATION_OPTIONS.filter((o) => o !== 'open-ended')
+    : DURATION_OPTIONS
 
   const updateDuration = (durationMinutes: DurationOption): void => {
     if (isRunning) {
@@ -62,6 +87,16 @@ export function ResonantSettingsForm({
   }
 
   const nextDuration = getNextDurationOption(settings.durationMinutes)
+
+  // Total practice time: rounds×duration + inter-round rests when on, else the single
+  // duration. Null only for open-ended (rounds off) — the line still renders to hold
+  // its height so toggling Rounds doesn't shift the layout.
+  const totalMinutes: number | null =
+    typeof settings.durationMinutes === 'number'
+      ? roundsOn
+        ? settings.rounds * settings.durationMinutes + (settings.rounds - 1) * settings.restMinutes
+        : settings.durationMinutes
+      : null
 
   return (
     <SettingsFormShell ariaLabel={strings.ariaLabel}>
@@ -115,13 +150,47 @@ export function ResonantSettingsForm({
       <SettingsStepper<DurationOption>
         label={strings.durationLabel}
         value={settings.durationMinutes}
-        options={DURATION_OPTIONS}
+        options={durationOptions}
         formatValue={formatDuration}
         onChange={updateDuration}
         disableDecrease={isRunning}
         disableIncrease={isRunning && typeof nextDuration !== 'number'}
         strings={strings.stepper}
       />
+      {!isRunning && (
+        <>
+          <SettingsToggleRow
+            label={strings.roundsToggleLabel}
+            ariaLabel={strings.roundsToggleLabel}
+            checked={roundsOn}
+            onChange={onToggleRounds}
+          />
+          {/* Count + rest are inert until the toggle is on (disabled steppers). */}
+          <SettingsStepper<number>
+            label={strings.roundsCountLabel}
+            value={roundsOn ? settings.rounds : ROUNDS_ON_DEFAULT}
+            options={RESONANT_ROUNDS_OPTIONS}
+            onChange={(rounds) => { updateSettings({ rounds }) }}
+            disabled={!roundsOn}
+            strings={strings.stepper}
+          />
+          <SettingsStepper<number>
+            label={strings.restBetweenLabel}
+            value={settings.restMinutes}
+            options={REST_MINUTES_OPTIONS}
+            formatValue={formatMinutes}
+            onChange={(restMinutes) => { updateSettings({ restMinutes }) }}
+            disabled={!roundsOn}
+            strings={strings.stepper}
+          />
+          <p
+            aria-live="polite"
+            className="mt-3 text-center text-sm text-[var(--color-breathing-muted)]"
+          >
+            {totalMinutes !== null ? strings.roundsTotalDuration(totalMinutes) : ' '}
+          </p>
+        </>
+      )}
     </SettingsFormShell>
   )
 }

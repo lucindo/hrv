@@ -2,8 +2,11 @@ import { describe, expect, it } from 'vitest'
 
 import { LOOKAHEAD_MIN_CUES, LOOKAHEAD_WINDOW_SEC } from '../audio/audioEngine'
 import type { BreathingPlan } from './breathingPlan'
-import { computeBoundaryAudioOffsets, resolveTargetSec, walkFutureCues, MAX_WALK_ITERATIONS } from './sessionAudio'
+import { createBreathingPlan } from './breathingPlan'
+import { buildRoundsTimeline, getRoundsFrame } from './roundsSession'
+import { computeBoundaryAudioOffsets, resolveRoundsCueAction, resolveTargetSec, walkFutureCues, MAX_WALK_ITERATIONS } from './sessionAudio'
 import { getCompletionSec, type SessionFrame } from './sessionMath'
+import { DEFAULT_SETTINGS, type SessionSettings } from './settings'
 import type { StretchSegment } from './stretchRamp'
 
 // Fixture values are seconds-shaped.
@@ -551,5 +554,65 @@ describe('computeBoundaryAudioOffsets', () => {
 
     expect(out.boundaryStartSec).toBe(59)
     expect(out.phaseDurationSec).toBe(6)
+  })
+})
+
+describe('resolveRoundsCueAction', () => {
+  // bpm 6 → cycleSec 10; durationMinutes 5 → 300 s block; rounds 2; restMinutes 1; leadIn 3.
+  //   work_1 [0,300) · rest [300,360) · lead-in [360,363) · work_2 [363,663)
+  const roundsSettings: SessionSettings = {
+    ...DEFAULT_SETTINGS, bpm: 6, inhaleShare: 40, durationMinutes: 5, rounds: 2, restMinutes: 1,
+  }
+  const timeline = buildRoundsTimeline(roundsSettings, 3)
+  const roundsPlan = createBreathingPlan(roundsSettings)
+  const ANCHOR = 1000
+
+  const actionAt = (elapsedSec: number) =>
+    resolveRoundsCueAction({
+      timeline,
+      frame: getRoundsFrame(timeline, elapsedSec),
+      audioAnchor: ANCHOR,
+      plan: roundsPlan,
+      lookaheadWindowSec: LOOKAHEAD_WINDOW_SEC,
+      minCues: LOOKAHEAD_MIN_CUES,
+    })
+
+  it('tops up work cues for the active block, never leaking into the rest gap', () => {
+    const action = actionAt(0)
+    expect(action.kind).toBe('work')
+    if (action.kind !== 'work') throw new Error('expected work')
+    expect(action.cues.length).toBeGreaterThan(0)
+    // Every cue stays inside block_1 — none reaches the rest gap or block_2 (>= ANCHOR+363).
+    const maxAudioTime = Math.max(...action.cues.map((c) => c.audioTime))
+    expect(maxAudioTime).toBeLessThan(ANCHOR + 300)
+  })
+
+  it('does not schedule the next block early near the end of a block (floor cannot leak)', () => {
+    // 295 s in — only the tail of block_1 remains; the min-cue floor must NOT pull a
+    // block_2 cue forward across the 60 s rest gap.
+    const action = actionAt(295)
+    if (action.kind !== 'work') throw new Error('expected work')
+    for (const cue of action.cues) {
+      expect(cue.audioTime).toBeLessThan(ANCHOR + 300)
+    }
+  })
+
+  it('suppresses cues and signals the boundary during rest', () => {
+    expect(actionAt(320)).toEqual({ kind: 'rest' })
+  })
+
+  it('schedules the 3-2-1 ticks during the lead-in (start of the lead-in window)', () => {
+    // lead-in window for block_2 is [360, 363); ticks start at block.start − leadIn = 363 − 3.
+    expect(actionAt(361)).toEqual({ kind: 'lead-in', ticksStartAudioTime: ANCHOR + 360 })
+  })
+
+  it('resumes work cues for the second block after the gap', () => {
+    const action = actionAt(363)
+    expect(action.kind).toBe('work')
+    if (action.kind !== 'work') throw new Error('expected work')
+    // Cues belong to block_2 — at or past its start, before its end.
+    const minAudioTime = Math.min(...action.cues.map((c) => c.audioTime))
+    expect(minAudioTime).toBeGreaterThanOrEqual(ANCHOR + 363)
+    expect(Math.max(...action.cues.map((c) => c.audioTime))).toBeLessThan(ANCHOR + 663)
   })
 })

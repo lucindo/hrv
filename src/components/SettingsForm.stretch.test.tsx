@@ -327,10 +327,10 @@ describe('advanced (precise control) mode', () => {
     renderForm({
       activePractice: 'resonant',
       advanced: false,
-      settings: { bpm: 3.35, inhaleShare: 37, durationMinutes: 10 },
+      settings: { bpm: 3.35, inhaleShare: 37, durationMinutes: 10, rounds: 1, restMinutes: 5 },
       onChange,
     })
-    expect(onChange).toHaveBeenCalledWith({ bpm: 3.5, inhaleShare: 40, durationMinutes: 10 })
+    expect(onChange).toHaveBeenCalledWith({ bpm: 3.5, inhaleShare: 40, durationMinutes: 10, rounds: 1, restMinutes: 5 })
   })
 
   it('does not reconcile while precise control is on (free values stay put)', () => {
@@ -338,7 +338,7 @@ describe('advanced (precise control) mode', () => {
     renderForm({
       activePractice: 'resonant',
       advanced: true,
-      settings: { bpm: 3.35, inhaleShare: 37, durationMinutes: 10 },
+      settings: { bpm: 3.35, inhaleShare: 37, durationMinutes: 10, rounds: 1, restMinutes: 5 },
       onChange,
     })
     expect(onChange).not.toHaveBeenCalled()

@@ -13,11 +13,17 @@ export const COOLDOWN_OPTIONS = [2, 3, 4, 5, 10, 15, 20, 25, 30, 'open-ended'] a
 
 export const RAMP_DURATION_OPTIONS = [2, 3, 4, 5, 10] as const satisfies readonly number[]
 
-// SessionSettings is standard-only — 3 fields (bpm, inhaleShare, durationMinutes).
+// SessionSettings — bpm, inhaleShare, durationMinutes, plus rounds config.
+// `rounds === 1` means rounds off (a single continuous block); rounds > 1 splits
+// the practice into N work blocks separated by `restMinutes` rests. In rounds
+// mode `durationMinutes` is the per-round work length and must be finite (an
+// open-ended round never completes, so rounds could never advance).
 export interface SessionSettings {
   bpm: number
   inhaleShare: number
   durationMinutes: DurationOption
+  rounds: number
+  restMinutes: number
 }
 
 // StretchSettings is a standalone type — start/target inhale share + the five ramp fields.
@@ -66,6 +72,24 @@ export const STRETCH_INITIAL_BPM_OPTIONS: readonly number[] = (BPM_OPTIONS as re
 // Inhale share (% of cycle) bounds — exhale >= inhale always, so inhale caps at 50 (Q4).
 export const INHALE_MIN = 10
 export const INHALE_MAX = 50
+
+// Rounds bounds. 1 = off (single block); 2–10 when rounds mode is on. The stored
+// range is 1–10; the form's "on" stepper offers 2–10 (RESONANT_ROUNDS_OPTIONS).
+export const RESONANT_ROUNDS_MIN = 1
+export const RESONANT_ROUNDS_MAX = 10
+
+// Rest length between rounds, in minutes.
+export const REST_MINUTES_MIN = 1
+export const REST_MINUTES_MAX = 10
+
+// Stepper options shown when rounds mode is on (2–10; "off" is the toggle = 1).
+export const RESONANT_ROUNDS_OPTIONS = [2, 3, 4, 5, 6, 7, 8, 9, 10] as const satisfies readonly number[]
+
+// Rest-minutes stepper options.
+export const REST_MINUTES_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as const satisfies readonly number[]
+
+// Default rounds count when the toggle is first switched on (operator decision).
+export const ROUNDS_ON_DEFAULT = 2
 
 // Discrete inhale-share presets shown when advanced is off (the former 50:50…20:80
 // RatioLabel set). exhale% is always 100 - inhale%.
@@ -141,6 +165,8 @@ export const DEFAULT_SETTINGS: SessionSettings = {
   bpm: 5.5,
   inhaleShare: 40,
   durationMinutes: 10,
+  rounds: 1,
+  restMinutes: 5,
 }
 
 // DEFAULT_STRETCH_SETTINGS: the per-field stretch defaults referenced by the
@@ -244,6 +270,22 @@ export function isValidInhaleShare(v: unknown): v is number {
   return typeof v === 'number' && Number.isFinite(v) && v >= INHALE_MIN && v <= INHALE_MAX
 }
 
+export function isValidResonantRounds(v: unknown): v is number {
+  return typeof v === 'number'
+    && Number.isFinite(v)
+    && Number.isInteger(v)
+    && v >= RESONANT_ROUNDS_MIN
+    && v <= RESONANT_ROUNDS_MAX
+}
+
+export function isValidRestMinutes(v: unknown): v is number {
+  return typeof v === 'number'
+    && Number.isFinite(v)
+    && Number.isInteger(v)
+    && v >= REST_MINUTES_MIN
+    && v <= REST_MINUTES_MAX
+}
+
 export function isValidDuration(v: unknown): v is DurationOption {
   if (v === 'open-ended') return true
   return typeof v === 'number'
@@ -282,6 +324,20 @@ export function validateSettings(settings: SessionSettings): SessionSettings {
 
   if (!isValidDuration(settings.durationMinutes)) {
     throw new RangeError(`Unsupported duration: ${String(settings.durationMinutes)}`)
+  }
+
+  if (!isValidResonantRounds(settings.rounds)) {
+    throw new RangeError(`Unsupported rounds: ${String(settings.rounds)}`)
+  }
+
+  if (!isValidRestMinutes(settings.restMinutes)) {
+    throw new RangeError(`Unsupported restMinutes: ${String(settings.restMinutes)}`)
+  }
+
+  // Rounds mode requires a finite per-round duration — an open-ended round never
+  // completes, so rounds could never advance.
+  if (settings.rounds > 1 && settings.durationMinutes === 'open-ended') {
+    throw new RangeError('Rounds mode requires a finite per-round duration')
   }
 
   return { ...settings }

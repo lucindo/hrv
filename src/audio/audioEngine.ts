@@ -39,6 +39,10 @@ export interface AudioEngine {
    *  Returns the audioTime of the first In cue (= startAudioTime + 3), or null when the engine
    *  is closed — AUDIO-03. */
   scheduleLeadIn(startAudioTime: number, plan: BreathingPlan): number | null
+  /** Schedule a ticks-only 3-2-1 lead-in (no first In cue): ticks at startAudioTime + 0/+1/+2 s.
+   *  Used between rounds, where the next work block's first In cue is scheduled by the
+   *  lookahead — not the lead-in. No-op when closed. */
+  scheduleLeadInTicks(startAudioTime: number): void
   /** Notify of a phase boundary mid-session. Schedules the corresponding In or Out cue
    *  at the given audioTime (always — muted cues route silently through masterGain).
    *  `phaseDurationSec` is the length of the UPCOMING phase (in / out) in seconds;
@@ -288,14 +292,9 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
       if (closed) return null // closed engine has no meaningful projection.
       // Cues schedule even while muted (they play silently through masterGain=0).
 
-      // Facade over the internal schedule(when, cue) dispatch.
-      // 3 ticks at +0/+1/+2 + first In cue at +3. Track each so mid-lead-in mute
-      // can fade them out — schedule()'s switch arms do the activeCues.add
-      // bookkeeping. The countdown beep is the shared scheduleCountdownTick —
-      // the same beep the Navi Kriya countdown uses — and honours the session timbre.
-      schedule(startAudioTime + 0 * LEAD_IN_TICK_INTERVAL_SEC, { kind: 'lead-in-tick' })
-      schedule(startAudioTime + 1 * LEAD_IN_TICK_INTERVAL_SEC, { kind: 'lead-in-tick' })
-      schedule(startAudioTime + 2 * LEAD_IN_TICK_INTERVAL_SEC, { kind: 'lead-in-tick' })
+      // 3 countdown ticks at +0/+1/+2 (shared with scheduleLeadInTicks), then the
+      // first In cue at +3.
+      engine.scheduleLeadInTicks(startAudioTime)
       // First In cue at +3. Pass the upcoming In-phase duration so the decay envelope
       // stretches with the phase length at low BPM (App.tsx boundary scheduler does the
       // same for every subsequent cue). plan.inhaleSec is seconds-shaped at the source —
@@ -304,6 +303,16 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
       schedule(firstInCueTime, { kind: 'in', phaseDurationSec: plan.inhaleSec })
 
       return firstInCueTime
+    },
+
+    scheduleLeadInTicks(startAudioTime: number): void {
+      if (closed) return
+      // The 3 countdown ticks at +0/+1/+2 s — the shared scheduleCountdownTick beep
+      // (same as Navi Kriya), honouring the session timbre. scheduleLeadIn adds the
+      // first In cue at +3; the between-rounds caller leaves the In to the lookahead.
+      schedule(startAudioTime + 0 * LEAD_IN_TICK_INTERVAL_SEC, { kind: 'lead-in-tick' })
+      schedule(startAudioTime + 1 * LEAD_IN_TICK_INTERVAL_SEC, { kind: 'lead-in-tick' })
+      schedule(startAudioTime + 2 * LEAD_IN_TICK_INTERVAL_SEC, { kind: 'lead-in-tick' })
     },
 
     scheduleNextCue({ newPhase, audioTime, phaseDurationSec }: { newPhase: 'in' | 'out'; audioTime: number; phaseDurationSec: number }): void {

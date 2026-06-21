@@ -101,6 +101,9 @@ export interface UseAudioCues {
    *  HRV completion (parity with the Navi Kriya end cue). No-op if the AC is
    *  unavailable or muted; the engine keeps the AC alive until it rings out. */
   playEndChord(this: void): void
+  /** Schedule the between-rounds 3-2-1 ticks at the given audio time (no first In cue).
+   *  No-op if the engine is null (before start). */
+  scheduleLeadInTicks(this: void, startAudioTime: number): void
   /** See AudioStatusFlag JSDoc. App view-model reads this to drive
    *  MuteToggle's needsResume prop. */
   audioStatus: AudioStatusFlag
@@ -644,6 +647,10 @@ export function useAudioCues(
     engineRef.current?.playEndChord()
   }, [])
 
+  const scheduleLeadInTicks = useCallback((startAudioTime: number): void => {
+    engineRef.current?.scheduleLeadInTicks(startAudioTime)
+  }, [])
+
   return {
     status,
     audioAvailable,
@@ -657,6 +664,7 @@ export function useAudioCues(
     cancelFutureCues,
     audioNow,
     playEndChord,
+    scheduleLeadInTicks,
     audioStatus,
     resume,
   }

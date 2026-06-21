@@ -67,6 +67,7 @@ export function SettingsStepper<T extends string | number>({
       ariaLabel={strings.fieldAriaLabel(label)}
       className="flex items-center justify-between"
       noBorder={hideTopBorder}
+      dimmed={disabled}
     >
       {readOnly ? (
         <output
@@ -88,7 +89,7 @@ export function SettingsStepper<T extends string | number>({
           </button>
           <output
             aria-live="polite"
-            className="min-w-[72px] text-center text-base font-medium tabular-nums text-[var(--color-breathing-text)]"
+            className={`min-w-[72px] text-center text-base font-medium tabular-nums text-[var(--color-breathing-text)]${disabled ? ' opacity-45' : ''}`}
           >
             {formatValue(value)}
           </output>

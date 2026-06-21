@@ -148,6 +148,28 @@ describe('useSessionEngine', () => {
     expect(openEnded.result.current.state.selectedSettings.durationMinutes).toBe('open-ended')
     openEnded.unmount()
   })
+
+  it('dispatches to the rounds branch and drives rounds frames off the rAF loop', () => {
+    // rounds > 1 selects startRoundsSession (one continuous timeline); rounds === 1
+    // keeps the standard path. Completion + rest transitions are covered synchronously
+    // in sessionController.test.ts; here we only prove the engine wiring.
+    const roundsSettings: SessionSettings = {
+      ...defaultSettings, bpm: 6, inhaleShare: 40, durationMinutes: 5, rounds: 2, restMinutes: 1,
+    }
+    const { result, unmount } = renderHook(() => useSessionEngine(roundsSettings, null, fakeClock))
+
+    act(() => { result.current.start() })
+    expect(result.current.state.status).toBe('running')
+    expect(result.current.currentFrame?.roundNumber).toBe(1)
+    expect(result.current.currentFrame?.roundPhase).toBe('work')
+
+    // The rAF loop keeps producing rounds frames from the single injected clock.
+    act(() => { vi.advanceTimersByTime(5_000) })
+    expect(result.current.liveFrame?.roundPhase).toBe('work')
+    expect(result.current.liveFrame?.roundsTotal).toBe(2)
+
+    unmount()
+  })
 })
 
 // Identity contracts: currentFrame is per-phase-stable, liveFrame changes per rAF,

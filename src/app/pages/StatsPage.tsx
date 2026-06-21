@@ -85,7 +85,11 @@ function PracticeStatsBlock({
       <SettingsSectionHeader label={name} />
       <SectionCard padding="14px 16px">
         <div className="grid gap-2">
-          <StatRow label={fields.sessions} value={String(stat.totalSessions)} />
+          {/* Resonant counts rounds (1 session == 1 round), so its row reads "Rounds". */}
+          <StatRow
+            label={practice === 'resonant' ? fields.rounds : fields.sessions}
+            value={String(stat.totalSessions)}
+          />
           <StatRow
             label={fields.totalTime}
             value={formatTotalTime(stat.totalElapsedSeconds, strings.totalTimeDays)}

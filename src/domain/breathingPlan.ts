@@ -1,3 +1,4 @@
+import { SEC_PER_MINUTE } from './sessionMath'
 import type { SessionSettings } from './settings'
 import { validateSettings } from './settings'
 
@@ -9,8 +10,6 @@ export interface BreathingPlan {
   readonly exhaleSec: number
   readonly totalSec: number | null
 }
-
-const SEC_PER_MINUTE = 60
 
 export function createBreathingPlan(settings: SessionSettings): BreathingPlan {
   const validSettings = validateSettings(settings)

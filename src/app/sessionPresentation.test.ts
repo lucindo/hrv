@@ -65,6 +65,51 @@ describe('breathing presentation model', () => {
       isLeadInPlaceholder: true,
     })
   })
+
+  it('non-rounds running session has no rounds readout', () => {
+    const model = getBreathingPresentation({
+      phase: 'running', sessionCue: 'arrow', liveCue: 'labels', leadInDigit: null,
+      leadInPlaceholderFrame: null, liveFrame: frame, status: 'running', inSessionView: true,
+      bpm: 5.5, ratio: '40:60',
+    })
+    expect(model.readout.rounds).toBeNull()
+  })
+})
+
+describe('breathing rounds presentation', () => {
+  const roundsFrame = (over: Partial<SessionFrame>): SessionFrame => ({
+    phase: 'in', phaseLabel: 'In', elapsedSec: 0, remainingSec: 600, phaseProgress: 0,
+    cycleIndex: 0, isComplete: false,
+    roundNumber: 2, roundsTotal: 3, roundPhase: 'work', restRemainingSec: 0, roundLeadInDigit: null,
+    ...over,
+  })
+
+  const present = (liveFrame: SessionFrame) => getBreathingPresentation({
+    phase: 'running', sessionCue: 'arrow', liveCue: 'labels', leadInDigit: null,
+    leadInPlaceholderFrame: null, liveFrame, status: 'running', inSessionView: true,
+    bpm: 5.5, ratio: '40:60',
+  })
+
+  it('work: orb breathes and the rounds readout reports the round', () => {
+    const live = roundsFrame({ roundPhase: 'work', roundNumber: 1 })
+    const model = present(live)
+    expect(model.shape.frame).toBe(live)            // orb breathes during work
+    expect(model.shape.leadInDigit).toBeNull()
+    expect(model.readout.rounds).toEqual({ phase: 'work', restRemainingSec: 0, leadInDigit: null })
+  })
+
+  it('rest: orb idles and the rounds readout carries the rest countdown', () => {
+    const model = present(roundsFrame({ roundPhase: 'rest', restRemainingSec: 42 }))
+    expect(model.shape.frame).toBeNull()            // orb idle during rest
+    expect(model.readout.rounds).toMatchObject({ phase: 'rest', restRemainingSec: 42 })
+  })
+
+  it('lead-in: orb shows the 3-2-1 digit, no breathing frame', () => {
+    const model = present(roundsFrame({ roundPhase: 'lead-in', roundLeadInDigit: 2 }))
+    expect(model.shape.frame).toBeNull()
+    expect(model.shape.leadInDigit).toBe(2)
+    expect(model.readout.rounds).toMatchObject({ phase: 'lead-in', leadInDigit: 2 })
+  })
 })
 
 describe('Navi Kriya presentation model', () => {

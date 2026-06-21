@@ -5,7 +5,7 @@ import {
   LOOKAHEAD_WINDOW_SEC,
 } from '../audio/audioEngine'
 import { createBreathingPlan } from '../domain/breathingPlan'
-import { resolveTargetSec, walkFutureCues } from '../domain/sessionAudio'
+import { resolveRoundsCueAction, resolveTargetSec, walkFutureCues } from '../domain/sessionAudio'
 import type { BreathingSessionPhase, LeadInDigit } from '../domain/sessionLifecycle'
 import { getSessionFrame, type SessionFrame } from '../domain/sessionMath'
 import type { CueStyleId, SessionSettings, StretchSettings } from '../domain/settings'
@@ -123,6 +123,7 @@ export function useBreathingSessionController({
   const audioTopUpLookahead = audio.topUpLookahead
   const audioCancelFutureCues = audio.cancelFutureCues
   const audioPlayEndChord = audio.playEndChord
+  const audioScheduleLeadInTicks = audio.scheduleLeadInTicks
   const audioStatus = audio.audioStatus
   const audioResume = audio.resume
   // audioMuted drives the mute/resume toggle (onMuteOrResumeClick). It does NOT
@@ -273,6 +274,13 @@ export function useBreathingSessionController({
   // This is the ONLY ms-shaped value emitted from this hook; everywhere else in
   // the running-session chain is seconds-shaped end-to-end.
   const completedAtSec = state.status === 'complete' ? state.completedAtSec : null
+  // Rounds completed by a finished rounds practice — narrowed here (the union access
+  // is invalid on Idle) so the record effect reads a primitive. null for non-rounds
+  // and early-ended practices → they count as 1 round.
+  const completedRoundsTotal =
+    state.status === 'complete' && state.roundsTimeline !== null
+      ? state.roundsTimeline.roundsTotal
+      : null
   const runningSnapshotRefStable = session.runningSnapshotRef
   useEffect(() => {
     if (state.status === 'running') return
@@ -303,13 +311,16 @@ export function useBreathingSessionController({
       if (activePractice === 'stretch') {
         recordStretchSession(elapsedMs, isComplete)
       } else {
-        recordResonantSession(elapsedMs, isComplete)
+        // A completed rounds practice counts all its rounds; a single block or an
+        // early-ended practice counts 1.
+        recordResonantSession(elapsedMs, isComplete, {}, completedRoundsTotal ?? 1)
       }
       recordedSessionKeyRef.current = snap.key
     }
   }, [
     state.status,
     completedAtSec,
+    completedRoundsTotal,
     runningSnapshotRefStable,
     activePractice,
     audioStop,
@@ -336,6 +347,10 @@ export function useBreathingSessionController({
     state.status === 'running' || state.status === 'complete'
       ? state.stretchSegments
       : undefined
+  const roundsTimelineForTopUp =
+    state.status === 'running' || state.status === 'complete'
+      ? state.roundsTimeline
+      : undefined
   useEffect(() => {
     if (phase !== 'running') return
 
@@ -349,6 +364,34 @@ export function useBreathingSessionController({
     const audioAnchor = audioAnchorRef.current
     const plan = planRef.current
     if (audioAnchor === null || plan === null) return
+
+    // Rounds: ONE continuous session with rest + lead-in gaps. Top up cues only for
+    // the current work block (trimmed at its end so the lookahead floor can't leak a
+    // cue into the rest gap); go silent during rest/lead-in; ring the end chord at
+    // each work→rest round boundary. The final round's end chord fires on 'complete'
+    // (the leave-running effect above). resolveRoundsCueAction is pure + tested.
+    if (roundsTimelineForTopUp != null) {
+      const action = resolveRoundsCueAction({
+        timeline: roundsTimelineForTopUp,
+        frame,
+        audioAnchor,
+        plan,
+        lookaheadWindowSec: LOOKAHEAD_WINDOW_SEC,
+        minCues: LOOKAHEAD_MIN_CUES,
+      })
+      audioCancelFutureCues()
+      if (action.kind === 'work') {
+        audioTopUpLookahead(action.cues)
+      } else if (action.kind === 'rest') {
+        audioPlayEndChord()
+      } else {
+        // lead-in: breath cues stay cancelled; schedule the audible 3-2-1 ticks
+        // (the visual digit comes from the frame). currentFrame is per-phase-stable,
+        // so this fires once on entering the lead-in.
+        audioScheduleLeadInTicks(action.ticksStartAudioTime)
+      }
+      return
+    }
 
     // Session-elapsed relative to anchor for the lookahead window computation
     const elapsedSec = frame.elapsedSec
@@ -391,7 +434,7 @@ export function useBreathingSessionController({
     // for the single-tick lag case which produces the minimal 5ms flam.
     audioCancelFutureCues()
     audioTopUpLookahead(cues)
-  }, [phase, session.currentFrame, audioTopUpLookahead, audioCancelFutureCues, stretchSegmentsForTopUp])
+  }, [phase, session.currentFrame, audioTopUpLookahead, audioCancelFutureCues, audioPlayEndChord, audioScheduleLeadInTicks, stretchSegmentsForTopUp, roundsTimelineForTopUp])
 
   useEffect(() => {
     return () => {

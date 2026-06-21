@@ -60,6 +60,8 @@ export interface UiStrings {
       readonly stageHoldInitial: string
       readonly stageRamp: string
       readonly stageHoldTarget: string
+      readonly rest: string
+      readonly roundOf: (current: number, total: number) => string
     }
     readonly settingsForm: {
       readonly ariaLabel: string
@@ -87,6 +89,10 @@ export interface UiStrings {
       readonly holdTargetLabel: string
       readonly rampDurationLabel: string
       readonly holdOpenEndedLabel: string
+      readonly roundsToggleLabel: string
+      readonly roundsCountLabel: string
+      readonly restBetweenLabel: string
+      readonly roundsTotalDuration: (minutes: number) => string
     }
     readonly nkControls: {
       readonly roundsLabel: string
@@ -288,6 +294,8 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         stageHoldInitial: 'Warm-up',
         stageRamp: 'Stretch',
         stageHoldTarget: 'Settle',
+        rest: 'Rest',
+        roundOf: (c, t) => `Round ${String(c)} of ${String(t)}`,
       },
       settingsForm: {
         ariaLabel: 'Session settings',
@@ -315,6 +323,10 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         holdTargetLabel: 'Settle',
         rampDurationLabel: 'Stretch',
         holdOpenEndedLabel: '∞',
+        roundsToggleLabel: 'Rounds',
+        roundsCountLabel: 'Number of rounds',
+        restBetweenLabel: 'Rest between rounds',
+        roundsTotalDuration: (m) => `Total ~${String(m)} min`,
       },
       nkControls: {
         roundsLabel: 'Rounds',
@@ -490,6 +502,8 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         stageHoldInitial: 'Aquecimento',
         stageRamp: 'Progressão',
         stageHoldTarget: 'Estabilizar',
+        rest: 'Descanso',
+        roundOf: (c, t) => `Rodada ${String(c)} de ${String(t)}`,
       },
       settingsForm: {
         ariaLabel: 'Configurações da sessão',
@@ -517,6 +531,10 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         holdTargetLabel: 'Estabilizar',
         rampDurationLabel: 'Progressão',
         holdOpenEndedLabel: '∞',
+        roundsToggleLabel: 'Rodadas',
+        roundsCountLabel: 'Número de rodadas',
+        restBetweenLabel: 'Descanso entre rodadas',
+        roundsTotalDuration: (m) => `Total ~${String(m)} min`,
       },
       nkControls: {
         roundsLabel: 'Rodadas',
@@ -581,7 +599,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       },
       about: {
         versionLabel: 'Versão',
-        sourceLinkText: 'Código-fonte',
+        sourceLinkText: 'Código',
       },
       themes: {
         light: 'Claro',
