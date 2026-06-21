@@ -3,6 +3,18 @@ import type { StretchStage } from './stretchRamp'
 
 export type BreathPhase = 'in' | 'out'
 
+// The breath-segment fields the cue walk + per-segment frame math read. Both
+// StretchSegment and RoundWorkSegment are structural supersets, so walkFutureCues
+// accepts either without a stretch- or rounds-specific shape.
+export interface BreathSegment {
+  readonly startSec: number
+  readonly endSec: number
+  readonly cycleSec: number
+  readonly inhaleSec: number
+  readonly exhaleSec: number
+  readonly cycleBaseIndex: number
+}
+
 export interface SessionFrame {
   readonly phase: BreathPhase
   readonly phaseLabel: 'In' | 'Out'

@@ -1,5 +1,6 @@
 import type { BreathingPlan } from './breathingPlan'
-import { getCompletionSec, type SessionFrame } from './sessionMath'
+import type { RoundsTimeline, RoundWorkSegment } from './roundsSession'
+import { getCompletionSec, type BreathSegment, type SessionFrame } from './sessionMath'
 import { getStretchCompletionSec, type StretchSegment } from './stretchRamp'
 
 export interface BoundaryAudioOffsets {
@@ -58,7 +59,7 @@ export function walkFutureCues(args: {
   fromCycleIndex: number
   fromPhase: 'in' | 'out'
   plan: BreathingPlan
-  segments?: StretchSegment[] | undefined
+  segments?: BreathSegment[] | undefined
   lookaheadWindowSec: number
   minCues: number
   targetSec?: number | undefined
@@ -110,7 +111,7 @@ export function walkFutureCues(args: {
       audioTimeRelSec = cycleStart + phaseOffset
       phaseDurationSec = currentPhase === 'in' ? plan.inhaleSec : plan.exhaleSec
     } else {
-      // ── Stretch branch: per-segment cycleSec from segment table ──
+      // ── Segmented branch: per-segment cycleSec from segment table (stretch + rounds) ──
       // Compute audioTimeRelSec from cycleIndex + phase using segment walk
       // (mirrors getStretchFrame segment walk in stretchRamp.ts)
       // segments is non-empty (guarded by the caller via allDegenerate check above);
@@ -118,7 +119,7 @@ export function walkFutureCues(args: {
       // a non-null assertion — this branch is unreachable with a valid segments array.
       const lastSeg = segments[segments.length - 1]
       if (lastSeg === undefined) return []
-      let activeSeg: StretchSegment = lastSeg
+      let activeSeg: BreathSegment = lastSeg
       for (const seg of segments) {
         if (seg.cycleBaseIndex > currentCycleIndex) break
         activeSeg = seg
@@ -209,4 +210,65 @@ export function computeBoundaryAudioOffsets(
     boundaryStartSec: frame.cycleIndex * plan.cycleSec + (frame.phase === 'in' ? 0 : plan.inhaleSec),
     phaseDurationSec: frame.phase === 'in' ? plan.inhaleSec : plan.exhaleSec,
   }
+}
+
+// ─── resolveRoundsCueAction ────────────────────────────────────────────────────
+
+// The work block active at `cycleIndex` — the last segment whose cumulative cycle
+// base has been reached (mirrors walkFutureCues' segment walk).
+function activeWorkSegment(timeline: RoundsTimeline, cycleIndex: number): RoundWorkSegment {
+  let active = timeline.workSegments[0]
+  if (active === undefined) {
+    throw new RangeError('rounds timeline has no work segments')
+  }
+  for (const seg of timeline.workSegments) {
+    if (seg.cycleBaseIndex <= cycleIndex) active = seg
+    else break
+  }
+  return active
+}
+
+/**
+ * What the controller should do with cues for a rounds frame:
+ *   - work    → top up cues for the CURRENT block only (trimmed at the block's end so
+ *               the lookahead floor can't leak a cue into the rest gap).
+ *   - rest    → suppress cues (silent) + ring the round-boundary end chord.
+ *   - lead-in → suppress cues (the 3-2-1 is visual-only; the first In breath cue of
+ *               the next block resumes audio).
+ *
+ * Pure — the controller dispatches the action to audio calls. roundPhase is always set
+ * on a rounds frame; an absent/other value defaults to the work branch defensively.
+ */
+export type RoundsCueAction =
+  | { kind: 'work'; cues: FutureCue[] }
+  | { kind: 'rest' }
+  | { kind: 'lead-in' }
+
+export function resolveRoundsCueAction(args: {
+  timeline: RoundsTimeline
+  frame: SessionFrame
+  audioAnchor: number
+  plan: BreathingPlan
+  lookaheadWindowSec: number
+  minCues: number
+}): RoundsCueAction {
+  const { timeline, frame, audioAnchor, plan, lookaheadWindowSec, minCues } = args
+
+  if (frame.roundPhase === 'rest') return { kind: 'rest' }
+  if (frame.roundPhase === 'lead-in') return { kind: 'lead-in' }
+
+  const active = activeWorkSegment(timeline, frame.cycleIndex)
+  const cues = walkFutureCues({
+    audioAnchor,
+    elapsedSec: frame.elapsedSec,
+    fromCycleIndex: frame.cycleIndex,
+    fromPhase: frame.phase,
+    plan,
+    segments: timeline.workSegments,
+    lookaheadWindowSec,
+    minCues,
+    // Trim at THIS block's cycle-aligned end so no cue is scheduled into the rest gap.
+    targetSec: active.endSec,
+  })
+  return { kind: 'work', cues }
 }

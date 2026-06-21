@@ -5,7 +5,7 @@ import {
   LOOKAHEAD_WINDOW_SEC,
 } from '../audio/audioEngine'
 import { createBreathingPlan } from '../domain/breathingPlan'
-import { resolveTargetSec, walkFutureCues } from '../domain/sessionAudio'
+import { resolveRoundsCueAction, resolveTargetSec, walkFutureCues } from '../domain/sessionAudio'
 import type { BreathingSessionPhase, LeadInDigit } from '../domain/sessionLifecycle'
 import { getSessionFrame, type SessionFrame } from '../domain/sessionMath'
 import type { CueStyleId, SessionSettings, StretchSettings } from '../domain/settings'
@@ -336,6 +336,10 @@ export function useBreathingSessionController({
     state.status === 'running' || state.status === 'complete'
       ? state.stretchSegments
       : undefined
+  const roundsTimelineForTopUp =
+    state.status === 'running' || state.status === 'complete'
+      ? state.roundsTimeline
+      : undefined
   useEffect(() => {
     if (phase !== 'running') return
 
@@ -349,6 +353,30 @@ export function useBreathingSessionController({
     const audioAnchor = audioAnchorRef.current
     const plan = planRef.current
     if (audioAnchor === null || plan === null) return
+
+    // Rounds: ONE continuous session with rest + lead-in gaps. Top up cues only for
+    // the current work block (trimmed at its end so the lookahead floor can't leak a
+    // cue into the rest gap); go silent during rest/lead-in; ring the end chord at
+    // each work→rest round boundary. The final round's end chord fires on 'complete'
+    // (the leave-running effect above). resolveRoundsCueAction is pure + tested.
+    if (roundsTimelineForTopUp != null) {
+      const action = resolveRoundsCueAction({
+        timeline: roundsTimelineForTopUp,
+        frame,
+        audioAnchor,
+        plan,
+        lookaheadWindowSec: LOOKAHEAD_WINDOW_SEC,
+        minCues: LOOKAHEAD_MIN_CUES,
+      })
+      audioCancelFutureCues()
+      if (action.kind === 'work') {
+        audioTopUpLookahead(action.cues)
+      } else if (action.kind === 'rest') {
+        audioPlayEndChord()
+      }
+      // lead-in: visual-only (the 3-2-1 digit comes from the frame); cues stay cancelled.
+      return
+    }
 
     // Session-elapsed relative to anchor for the lookahead window computation
     const elapsedSec = frame.elapsedSec
@@ -391,7 +419,7 @@ export function useBreathingSessionController({
     // for the single-tick lag case which produces the minimal 5ms flam.
     audioCancelFutureCues()
     audioTopUpLookahead(cues)
-  }, [phase, session.currentFrame, audioTopUpLookahead, audioCancelFutureCues, stretchSegmentsForTopUp])
+  }, [phase, session.currentFrame, audioTopUpLookahead, audioCancelFutureCues, audioPlayEndChord, stretchSegmentsForTopUp, roundsTimelineForTopUp])
 
   useEffect(() => {
     return () => {
