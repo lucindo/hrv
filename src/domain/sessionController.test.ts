@@ -7,6 +7,7 @@ import {
   completeIfNeeded,
   endSession,
   extendTimedSession,
+  startRoundsSession,
   startSession,
   startStretchSession,
 } from './sessionController'
@@ -229,5 +230,43 @@ describe('extendTimedSession — no mode check (D-01)', () => {
     }
     const running = startStretchSession(stretchSettings, DEFAULT_SETTINGS, 0)
     expect(() => extendTimedSession(running, 30, 0)).toThrow(RangeError)
+  })
+})
+
+describe('startRoundsSession + rounds completeIfNeeded', () => {
+  // bpm 6 → cycleSec 10; durationMinutes 5 → 300 s block; rounds 2; restMinutes 1; leadIn 3.
+  //   work_1 [0,300) · rest [300,360) · lead-in [360,363) · work_2 [363,663)
+  const roundsSettings: SessionSettings = {
+    ...DEFAULT_SETTINGS, bpm: 6, inhaleShare: 40, durationMinutes: 5, rounds: 2, restMinutes: 1,
+  }
+  const LEAD_IN = 3
+
+  it('builds a running session with a rounds timeline and a round-1 work frame', () => {
+    const running = startRoundsSession(roundsSettings, 0, LEAD_IN)
+    expect(running.status).toBe('running')
+    expect(running.roundsTimeline?.totalSec).toBe(663)
+    expect(running.stretchSegments).toBeNull()
+    expect(running.lastFrame).toMatchObject({ roundPhase: 'work', roundNumber: 1, isComplete: false })
+  })
+
+  it('completeIfNeeded dispatches to the rounds frame across work / rest / completion', () => {
+    const running = startRoundsSession(roundsSettings, 100, LEAD_IN)  // startedAt 100
+    expect(completeIfNeeded(running, 100 + 150).status).toBe('running')
+
+    const resting = completeIfNeeded(running, 100 + 320)  // in the rest gap [300,360)
+    if (resting.status !== 'running') throw new Error('expected running')
+    expect(resting.lastFrame.roundPhase).toBe('rest')
+
+    expect(completeIfNeeded(running, 100 + 662).status).toBe('running')
+
+    const complete = completeIfNeeded(running, 100 + 663)
+    expect(complete.status).toBe('complete')
+    // Timeline is carried into the complete state (for stats / consumers).
+    expect(complete.status === 'complete' && complete.roundsTimeline?.totalSec).toBe(663)
+  })
+
+  it('rounds sessions cannot be extended via durationMinutes', () => {
+    const running = startRoundsSession(roundsSettings, 0, LEAD_IN)
+    expect(() => extendTimedSession(running, 15, 0)).toThrow(RangeError)
   })
 })

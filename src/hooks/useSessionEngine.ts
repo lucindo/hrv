@@ -12,10 +12,12 @@ import {
   completeIfNeeded,
   endSession,
   extendTimedSession,
+  startRoundsSession,
   startSession,
   startStretchSession,
   type SessionState,
 } from '../domain/sessionController'
+import { LEAD_IN_DURATION_SEC } from '../audio/audioEngine'
 
 /**
  * Running-session snapshot exported for App-side consumption. The hook owns
@@ -288,6 +290,12 @@ export function useSessionEngine(
       const sSettings = stretchSettingsRef.current
       if (sSettings !== null) {
         return startStretchSession(sSettings, currentState.selectedSettings, clock.now())
+      }
+
+      // Resonant with rounds > 1 runs the continuous rounds timeline; rounds === 1 is
+      // the standard single-block session.
+      if (currentState.selectedSettings.rounds > 1) {
+        return startRoundsSession(currentState.selectedSettings, clock.now(), LEAD_IN_DURATION_SEC)
       }
 
       return startSession(currentState.selectedSettings, clock.now())

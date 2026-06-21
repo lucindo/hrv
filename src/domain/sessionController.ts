@@ -1,5 +1,7 @@
 import type { BreathingPlan } from './breathingPlan'
 import { createBreathingPlan } from './breathingPlan'
+import type { RoundsTimeline } from './roundsSession'
+import { buildRoundsTimeline, getRoundsFrame } from './roundsSession'
 import type { SessionFrame } from './sessionMath'
 import { getSessionFrame } from './sessionMath'
 import type { DurationOption, SessionSettings, StretchSettings } from './settings'
@@ -20,6 +22,9 @@ export interface RunningSessionState {
   lockedSettings: SessionSettings
   plan: BreathingPlan
   stretchSegments: StretchSegment[] | null
+  // Continuous rounds timeline, or null for standard + stretch sessions. Mutually
+  // exclusive with stretchSegments (a session is one of standard / stretch / rounds).
+  roundsTimeline: RoundsTimeline | null
   // startedAtSec is the seconds-shaped session-start timestamp from the
   // injected SessionClock (audioCtx.currentTime via the SessionClock seam).
   startedAtSec: number
@@ -32,6 +37,7 @@ export interface CompleteSessionState {
   lockedSettings: SessionSettings
   plan: BreathingPlan
   stretchSegments: StretchSegment[] | null
+  roundsTimeline: RoundsTimeline | null
   completedAtSec: number
   message: 'Session complete'
 }
@@ -57,6 +63,34 @@ export function startSession(selectedSettings: SessionSettings, nowSec: number):
     lockedSettings,
     plan,
     stretchSegments: null,
+    roundsTimeline: null,
+    startedAtSec: nowSec,
+    lastFrame,
+  }
+}
+
+// startRoundsSession: ONE continuous timed session that runs N work blocks separated
+// by rest + per-round lead-in (buildRoundsTimeline). Completion is the timeline's
+// totalSec (final work block's cycle-aligned end). The plan carries the shared
+// bpm/inhale geometry for the audio layer; per-round completion lives in the timeline,
+// not plan.totalSec. `leadInSec` is the per-round lead-in length (LEAD_IN_DURATION_SEC).
+export function startRoundsSession(
+  selectedSettings: SessionSettings,
+  nowSec: number,
+  leadInSec: number,
+): RunningSessionState {
+  const lockedSettings = cloneSettings(selectedSettings)
+  const plan = createBreathingPlan(lockedSettings)
+  const roundsTimeline = buildRoundsTimeline(lockedSettings, leadInSec)
+  const lastFrame = getRoundsFrame(roundsTimeline, 0)
+
+  return {
+    status: 'running',
+    selectedSettings: cloneSettings(selectedSettings),
+    lockedSettings,
+    plan,
+    stretchSegments: null,
+    roundsTimeline,
     startedAtSec: nowSec,
     lastFrame,
   }
@@ -91,6 +125,7 @@ export function startStretchSession(
     lockedSettings: leadInSettings,                      // synthetic lead-in drives the audio plan
     plan,
     stretchSegments,
+    roundsTimeline: null,
     startedAtSec: nowSec,
     lastFrame,
   }
@@ -112,6 +147,11 @@ export function extendTimedSession(
   // governed by the rampDurationMinutes picker and the computed segment-table total.
   if (state.stretchSegments !== null) {
     throw new RangeError('Stretch sessions cannot be extended via durationMinutes')
+  }
+
+  // Rounds sessions cannot be extended — their total is the rounds timeline.
+  if (state.roundsTimeline !== null) {
+    throw new RangeError('Rounds sessions cannot be extended via durationMinutes')
   }
 
   if (state.lockedSettings.durationMinutes === 'open-ended') {
@@ -162,9 +202,11 @@ export function completeIfNeeded(
   nowSec: number,
 ): RunningSessionState | CompleteSessionState {
   const elapsedSec = nowSec - state.startedAtSec
-  const lastFrame = state.stretchSegments !== null
-    ? getStretchFrame(state.stretchSegments, elapsedSec)
-    : getSessionFrame(state.plan, elapsedSec)
+  const lastFrame = state.roundsTimeline !== null
+    ? getRoundsFrame(state.roundsTimeline, elapsedSec)
+    : state.stretchSegments !== null
+      ? getStretchFrame(state.stretchSegments, elapsedSec)
+      : getSessionFrame(state.plan, elapsedSec)
 
   if (!lastFrame.isComplete) {
     return {
@@ -179,6 +221,7 @@ export function completeIfNeeded(
     lockedSettings: cloneSettings(state.lockedSettings),
     plan: state.plan,
     stretchSegments: state.stretchSegments,
+    roundsTimeline: state.roundsTimeline,
     completedAtSec: nowSec,
     message: 'Session complete',
   }
