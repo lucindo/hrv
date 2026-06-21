@@ -88,6 +88,12 @@ export function ResonantSettingsForm({
 
   const nextDuration = getNextDurationOption(settings.durationMinutes)
 
+  // Rounds mode guarantees a finite per-round duration (toggle snaps open-ended away).
+  const roundsTotalMinutes =
+    roundsOn && typeof settings.durationMinutes === 'number'
+      ? settings.rounds * settings.durationMinutes + (settings.rounds - 1) * settings.restMinutes
+      : 0
+
   return (
     <SettingsFormShell ariaLabel={strings.ariaLabel}>
       {!isRunning && (
@@ -135,6 +141,20 @@ export function ResonantSettingsForm({
               onChange={(inhaleShare) => { updateSettings({ inhaleShare }) }}
             />
           )}
+        </>
+      )}
+      <SettingsStepper<DurationOption>
+        label={strings.durationLabel}
+        value={settings.durationMinutes}
+        options={durationOptions}
+        formatValue={formatDuration}
+        onChange={updateDuration}
+        disableDecrease={isRunning}
+        disableIncrease={isRunning && typeof nextDuration !== 'number'}
+        strings={strings.stepper}
+      />
+      {!isRunning && (
+        <>
           <SettingsToggleRow
             label={strings.roundsToggleLabel}
             ariaLabel={strings.roundsToggleLabel}
@@ -159,18 +179,16 @@ export function ResonantSettingsForm({
             disabled={!roundsOn}
             strings={strings.stepper}
           />
+          {roundsOn && (
+            <p
+              aria-live="polite"
+              className="mt-3 text-center text-sm text-[var(--color-breathing-muted)]"
+            >
+              {strings.roundsTotalDuration(roundsTotalMinutes)}
+            </p>
+          )}
         </>
       )}
-      <SettingsStepper<DurationOption>
-        label={strings.durationLabel}
-        value={settings.durationMinutes}
-        options={durationOptions}
-        formatValue={formatDuration}
-        onChange={updateDuration}
-        disableDecrease={isRunning}
-        disableIncrease={isRunning && typeof nextDuration !== 'number'}
-        strings={strings.stepper}
-      />
     </SettingsFormShell>
   )
 }

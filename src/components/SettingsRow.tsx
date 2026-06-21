@@ -20,6 +20,8 @@ export interface SettingsRowProps {
    * (Toggle, Stepper) where label and control are siblings in a flex container.
    */
   labelContainerClassName?: string
+  /** When true, dims the label to match a disabled control (whole-row dim). */
+  dimmed?: boolean
   children: ReactNode
 }
 
@@ -35,6 +37,7 @@ export function SettingsRow({
   className,
   noBorder = false,
   labelContainerClassName,
+  dimmed = false,
   children,
 }: SettingsRowProps): ReactElement {
   const fieldsetClass = [
@@ -45,7 +48,11 @@ export function SettingsRow({
     .join(' ')
 
   const labelSpan = (
-    <span className="text-[15px] font-normal text-[var(--color-breathing-text)]">{label}</span>
+    <span
+      className={`text-[15px] font-normal text-[var(--color-breathing-text)]${dimmed ? ' opacity-45' : ''}`}
+    >
+      {label}
+    </span>
   )
 
   return (

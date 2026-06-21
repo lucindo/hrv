@@ -92,6 +92,7 @@ export interface UiStrings {
       readonly roundsToggleLabel: string
       readonly roundsCountLabel: string
       readonly restBetweenLabel: string
+      readonly roundsTotalDuration: (minutes: number) => string
     }
     readonly nkControls: {
       readonly roundsLabel: string
@@ -325,6 +326,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         roundsToggleLabel: 'Rounds',
         roundsCountLabel: 'Number of rounds',
         restBetweenLabel: 'Rest between rounds',
+        roundsTotalDuration: (m) => `Total ~${String(m)} min`,
       },
       nkControls: {
         roundsLabel: 'Rounds',
@@ -532,6 +534,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         roundsToggleLabel: 'Rodadas',
         roundsCountLabel: 'Número de rodadas',
         restBetweenLabel: 'Descanso entre rodadas',
+        roundsTotalDuration: (m) => `Total ~${String(m)} min`,
       },
       nkControls: {
         roundsLabel: 'Rodadas',
