@@ -88,11 +88,15 @@ export function ResonantSettingsForm({
 
   const nextDuration = getNextDurationOption(settings.durationMinutes)
 
-  // Rounds mode guarantees a finite per-round duration (toggle snaps open-ended away).
-  const roundsTotalMinutes =
-    roundsOn && typeof settings.durationMinutes === 'number'
-      ? settings.rounds * settings.durationMinutes + (settings.rounds - 1) * settings.restMinutes
-      : 0
+  // Total practice time: rounds×duration + inter-round rests when on, else the single
+  // duration. Null only for open-ended (rounds off) — the line still renders to hold
+  // its height so toggling Rounds doesn't shift the layout.
+  const totalMinutes: number | null =
+    typeof settings.durationMinutes === 'number'
+      ? roundsOn
+        ? settings.rounds * settings.durationMinutes + (settings.rounds - 1) * settings.restMinutes
+        : settings.durationMinutes
+      : null
 
   return (
     <SettingsFormShell ariaLabel={strings.ariaLabel}>
@@ -179,14 +183,12 @@ export function ResonantSettingsForm({
             disabled={!roundsOn}
             strings={strings.stepper}
           />
-          {roundsOn && (
-            <p
-              aria-live="polite"
-              className="mt-3 text-center text-sm text-[var(--color-breathing-muted)]"
-            >
-              {strings.roundsTotalDuration(roundsTotalMinutes)}
-            </p>
-          )}
+          <p
+            aria-live="polite"
+            className="mt-3 text-center text-sm text-[var(--color-breathing-muted)]"
+          >
+            {totalMinutes !== null ? strings.roundsTotalDuration(totalMinutes) : ' '}
+          </p>
         </>
       )}
     </SettingsFormShell>
