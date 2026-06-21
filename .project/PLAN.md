@@ -28,6 +28,21 @@ discrete presets become a UI view + snap-on-toggle-off.
 - [x] Slice 6 — advanced toggle in Settings → Behavior + toggle-off snap to nearest preset (Q6) + i18n. (`feat(settings): add Precise control toggle + snap-on-disable`)
 - [x] Post-test UI fixes — round free values everywhere they surface: SetupCard BPM + Navi seconds (`8207502`); HRV in-session caption (`bd7ddf1`). Stretch in-session caption already rounds via `toFixed(1)`; Navi has no in-session velocity caption.
 
+## Roadmap — Native desktop apps via Pake (`feat/desktop-pake`)
+
+Decisions DA1–DA10 in `DECISIONS.md`; options in `EXPLORE.md`. Approach B:
+dedicated `desktop.yml` wrapping the live PWA, decoupled from `deploy.yml`.
+
+- [ ] Local smoke build confirms the locked config (`630×900`, `--hide-title-bar`) and `public/pwa-512x512.png` icon render correctly — icon shows in Dock/Finder, window looks right. *(A smoke test — gates the rest.)*
+- [ ] pake-cli current stable version resolved and pinned exact.
+- [ ] `workflow_dispatch` builds a macOS **universal** `.dmg` as a downloadable artifact.
+- [ ] `workflow_dispatch` builds a Windows `.msi` as a downloadable artifact.
+- [ ] Icon renders correctly in both CI-built installers (`.icns`/`.ico` conversion verified, not just local).
+- [ ] `desktop-v*` tag publishes a GitHub Release with both installers renamed `HRV-Breathing-<version>-macos-universal.dmg` / `-windows-x64.msi`, version from `package.json`.
+- [ ] README "Download" section links to `…/releases/latest`.
+- [ ] First-launch docs cover macOS Gatekeeper (`xattr -dr com.apple.quarantine`) and Windows SmartScreen *Run anyway*.
+- [ ] First real release cut (`desktop-v2.5.1`): Release live, both installers download and launch.
+
 ## Now
 
 **State** — SHIPPED & DEPLOYED. **v2.5.1** released: stretch completion now holds to
