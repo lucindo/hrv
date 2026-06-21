@@ -17,32 +17,20 @@
 //   └ breathing ┘  └─ gap ──┘  └ breathing ┘            └ breathing ┘
 
 import type { SessionSettings } from './settings'
-import type { BreathPhase, SessionFrame } from './sessionMath'
-
-const SEC_PER_MINUTE = 60
-
-// Pulls the exact-boundary landing 1 ms inside the block so the final cycle's
-// Math.floor stays on the last real cycle index instead of rolling one past it
-// (mirrors getStretchFrame's CLAMP_EPSILON_SEC).
-const CLAMP_EPSILON_SEC = 0.001
+import { CLAMP_EPSILON_SEC, SEC_PER_MINUTE } from './sessionMath'
+import type { BreathPhase, BreathSegment, SessionFrame } from './sessionMath'
 
 export type RoundPhaseKind = 'work' | 'rest' | 'lead-in'
 
 /**
  * One round's breathing work block — a constant-BPM segment on the continuous
- * timeline. Field names are a superset of what walkFutureCues' segment branch reads
- * (startSec, cycleSec, inhaleSec, exhaleSec, cycleBaseIndex) so the cue scheduler can
- * consume these directly. startSec already accounts for the rest + lead-in gaps; the
- * gaps carry no breath cycles, so cycleBaseIndex stays continuous across blocks.
+ * timeline. Extends BreathSegment so the cue scheduler consumes it directly. startSec
+ * already accounts for the rest + lead-in gaps; the gaps carry no breath cycles, so
+ * cycleBaseIndex stays continuous across blocks. endSec is cycle-aligned (whole cycles
+ * >= the configured work span).
  */
-export interface RoundWorkSegment {
-  readonly round: number          // 1-based
-  readonly startSec: number
-  readonly endSec: number          // cycle-aligned: whole cycles >= the configured work span
-  readonly cycleSec: number
-  readonly inhaleSec: number
-  readonly exhaleSec: number
-  readonly cycleBaseIndex: number  // cumulative cycles from all prior work blocks
+export interface RoundWorkSegment extends BreathSegment {
+  readonly round: number // 1-based
 }
 
 export interface RoundsTimeline {

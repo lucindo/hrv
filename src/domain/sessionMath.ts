@@ -3,9 +3,18 @@ import type { StretchStage } from './stretchRamp'
 
 export type BreathPhase = 'in' | 'out'
 
-// The breath-segment fields the cue walk + per-segment frame math read. Both
-// StretchSegment and RoundWorkSegment are structural supersets, so walkFutureCues
-// accepts either without a stretch- or rounds-specific shape.
+// Minutes→seconds factor for cycle/duration math. Shared by the breathing plan,
+// stretch ramp, and rounds timeline.
+export const SEC_PER_MINUTE = 60
+
+// Pulls an exact segment boundary 1 ms inside the span so Math.floor(elapsed / cycleSec)
+// stays on the last real cycle index instead of rolling one past it. Shared by the
+// stretch and rounds per-segment frame walks.
+export const CLAMP_EPSILON_SEC = 0.001
+
+// The breath-segment fields the cue walk + per-segment frame math read. StretchSegment
+// and RoundWorkSegment both extend this, so walkFutureCues accepts either without a
+// stretch- or rounds-specific shape.
 export interface BreathSegment {
   readonly startSec: number
   readonly endSec: number

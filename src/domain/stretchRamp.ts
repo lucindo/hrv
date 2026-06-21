@@ -10,7 +10,8 @@
 // whole-second computations (`60 / bpm` for cycle length, `* 60` for minutes-to-seconds).
 
 import type { StretchSettings } from './settings'
-import type { BreathPhase, SessionFrame } from './sessionMath'
+import { CLAMP_EPSILON_SEC } from './sessionMath'
+import type { BreathPhase, BreathSegment, SessionFrame } from './sessionMath'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -21,15 +22,10 @@ export type StretchStage = 'hold-initial' | 'ramp' | 'hold-target'
  * cycleBaseIndex = cumulative cycles completed in ALL prior segments — ensures
  * absolute monotonic cycleIndex across the full session.
  */
-export interface StretchSegment {
-  readonly startSec: number
-  readonly endSec: number          // Infinity for the open-ended hold-target segment
+// endSec is Infinity for the open-ended hold-target segment.
+export interface StretchSegment extends BreathSegment {
   readonly bpm: number
-  readonly cycleSec: number
-  readonly inhaleSec: number
-  readonly exhaleSec: number
   readonly stage: StretchStage
-  readonly cycleBaseIndex: number  // cumulative cycles from all prior segments
 }
 
 /**
@@ -229,7 +225,6 @@ export function getStretchFrame(
   // stays on the last real cycle index instead of rolling one past it. The open-ended
   // final segment (endSec === Infinity, completionSec === null) is left unclamped.
   const completionSec = getStretchCompletionSec(segments)
-  const CLAMP_EPSILON_SEC = 0.001
   const segmentCeilingSec =
     activeSeg === finalSegment && completionSec !== null ? completionSec : activeSeg.endSec
   const rawElapsedInSec = safeElapsedSec - activeSeg.startSec
