@@ -43,27 +43,46 @@ dedicated `desktop.yml` wrapping the live PWA, decoupled from `deploy.yml`.
 - [x] First-launch docs cover macOS Gatekeeper (`xattr -dr com.apple.quarantine`) and Windows SmartScreen *Run anyway* — in README **and** the release-page notes.
 - [x] First real release cut (`desktop-v2.5.1`): Release live, both installers attached, `releases/latest` resolves. (run `27890468068`; macOS launch confirmed via earlier smoke test, Windows launch unverified — no Windows box.)
 
+## Roadmap — Interval "Rounds" for HRV (`feat/hrv-rounds`, GitHub issue #4)
+
+HRV-only. Opt-in toggle splits a practice into N work blocks separated by a rest +
+a per-round 3-2-1 lead-in. **Design A (operator-chosen): ONE continuous engine
+session for the whole practice** — pure single clock (no `audioStop` until the final
+round/End); reuses the stretch segmented-session + cue-scheduler plumbing; `audioEngine`
+untouched. Rest starts only at each block's cycle-rounded end (existing completion rule).
+
+- [x] Slice 1 — domain model + persistence: `SessionSettings.rounds` (1=off) + `restMinutes`; validators; `validateSettings` cross-field (rounds>1 ⇒ finite duration); `coerceSettings` snap; `STATE_VERSION` 4→5 (additive). (`97bf32e`)
+- [x] Slice 2a — domain timeline + frame: `buildRoundsTimeline`/`getRoundsFrame` (work blocks held to whole cycles + rest/lead-in gaps, continuous cycleBaseIndex); 5 optional rounds fields on `SessionFrame`. (`2fed424`)
+- [x] Slice 2b — engine runs the timeline: `startRoundsSession` + `completeIfNeeded` rounds branch (third alongside stretch); `useSessionEngine.start` dispatches when `rounds>1`. (`f906f1c`)
+- [x] Slice 2c — controller orchestration: `BreathSegment` widening of `walkFutureCues`; pure `resolveRoundsCueAction` (per-block cue target, rest/lead-in suppression); `currentFrame` roundPhase-aware; end chord at each work→rest boundary. (`ba4401c`)
+- [x] Slice 3 — presentation: `RoundsReadout` ("Round X of N" + rest MM:SS); orb idles in rest/lead-in; 3-2-1 reuses OrbShape leadInDigit; i18n `readout.rest`/`roundOf`. (`b0c9514`)
+- [x] Slice 4 — settings form: Rounds toggle (dims count+rest), count 2–10, rest minutes; open-ended dropped when on; snap rounds→1 on off; i18n. (`d8f74c7`)
+- [x] Slice 5 — stats: resonant `totalSessions` counts rounds (+N completed / +1 else); StatsPage HRV row relabeled "Rounds"; history-preserving (1 session==1 round), no migration. (`df27414`)
+
+Flagged simplifications (await operator call): (1) rounds-2+ lead-in is VISUAL-ONLY
+(no audio ticks — avoids a `scheduleLeadIn` first-In flam; `scheduleLeadInTicks` is the
+clean follow-up); (2) total-time stat INCLUDES rest (full wall-clock); (3) early-ended
+rounds practice counts as 1 round; (4) round-caption/rest-countdown placement is a
+first-pass — visual refinement pending operator review.
+
 ## Now
 
-**State** — Desktop apps SHIPPED. PR #6 merged to `main`; Release **`desktop-v2.5.1`**
-live with `HRV-Breathing-2.5.1-{macos-universal.dmg,windows-x64.msi}` attached and
-`releases/latest` resolving. New `desktop.yml` (Pake → mac universal + win, publishes
-on `desktop-v*` tags) is decoupled from the web `deploy.yml`; flow documented in
-`DEPLOYMENT.md`, decisions DA1–DA10 in `DECISIONS.md`. Working tree clean; `main`
-pushed to origin.
+**State** — Rounds feature CODE-COMPLETE on branch `feat/hrv-rounds` (7 commits,
+`97bf32e`→`df27414`; branched from `main` @ `f580209`). All 5 slices done; whole
+practice runs as one continuous single-clock session. `tsc` + lint clean, full suite
+**1418 passing**. NOT merged, NOT pushed. Working tree clean. (Desktop apps from the
+prior milestone remain SHIPPED — `desktop-v2.5.1` live.)
 
-**Next** — Nothing pending. Optional only: visually verify the Windows `.msi`
-icon/launch on a real Windows box.
+**Next** — Operator runs `npm run dev` and tests rounds end-to-end (HRV settings →
+Rounds on → 2 rounds / 1-min rest / 5-min duration → start). Then returns with
+testing feedback to iterate. Key things to confirm: audio stays in sync across the
+rest gap into round 2; silent rest + MM:SS countdown; end chord at each boundary;
+3-2-1 between rounds; "Round X of N"; stats add N rounds on a completed practice.
 
-**Open questions** — None blocking.
-- Windows `.msi` icon render + launch never visually confirmed (no Windows box) — the
-  build embedded the icon and produced a valid WiX MSI.
-- Deferred by decision: macOS padded-squircle icon (DA6), Linux leg (DA2), code
-  signing (DA4).
-- Pre-existing (web deploy): the 3 Pages-only actions (`configure-pages@v6`,
-  `upload-pages-artifact@v5`, `deploy-pages@v5`) prove out only on the next `v*` tag
-  deploy; `download-artifact@v8` has since run green in `desktop.yml`.
+**Open questions** — Awaiting operator's testing feedback. The 4 flagged
+simplifications above (visual-only lead-in, total-time-includes-rest, early-end=1
+round, caption/countdown placement) are decisions to confirm or change after testing.
 
-**Notes** — Two independent release pipelines now: web (`vX.Y` tag → Pages,
-`DEPLOYMENT.md`) and desktop (`desktop-v*` tag → GitHub Release, same doc's "Desktop
-releases" section).
+**Notes** — Prior milestone (desktop apps) unchanged: web (`vX.Y`→Pages) and desktop
+(`desktop-v*`→GitHub Release) pipelines both live; Windows `.msi` launch still
+unverified (no Windows box).
