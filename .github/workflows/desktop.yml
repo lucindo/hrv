@@ -8,7 +8,6 @@ name: Build desktop apps
 on:
   push:
     tags: ['desktop-v*']
-    branches: ['feat/desktop-pake'] # TEMP: CI build verification — REMOVE before merge
   workflow_dispatch:
 
 permissions:
