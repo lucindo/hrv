@@ -68,18 +68,19 @@ rounds practice counts as 1 round.
 
 ## Now
 
-**State** — Rounds feature DONE & operator-tested on branch `feat/hrv-rounds` (16 commits,
-`97bf32e`→`aa6752c`; branched from `main` @ `f580209`). All 6 slices complete; testing
-feedback iterated and confirmed correct; temp 1-min testing aid reverted. `tsc` + lint
-clean, full suite **1421 passing**. Working tree clean. NOT merged, NOT pushed.
-(Desktop apps from the prior milestone remain SHIPPED — `desktop-v2.5.1` live.)
+**State** — Rounds feature SHIPPED. PR #7 merged to `main` @ `918d084` (true merge,
+all 22 commits preserved); GitHub issue #4 auto-closed. Post-merge cleanup landed a
+stray-file removal + two SSOT refactors (lead-in tick dedup; shared `SEC_PER_MINUTE`/
+`CLAMP_EPSILON_SEC` + `BreathSegment` extends). Version bumped to **2.6.0**; README
+documents Rounds. `tsc` + lint clean, full suite **1421 passing**.
 
-**Next** — Open the PR for `feat/hrv-rounds` → `main` (GitHub issue #4) when the operator
-is ready. Nothing else outstanding on the feature.
+**Next** — Cutting the **v2.6** web release: `versions.json` official → `v2.6`,
+checkpoint, commit, tag `v2.6`, push to trigger the Pages release deploy. (Desktop
+release `desktop-v2.6.0` NOT cut — separate `desktop-v*` tag when wanted.)
 
 **Open questions** — None blocking. Simplifications (2) total-time includes rest and
 (3) early-end counts as 1 round are accepted as-built; revisit only if desired.
 
-**Notes** — Prior milestone (desktop apps) unchanged: web (`vX.Y`→Pages) and desktop
-(`desktop-v*`→GitHub Release) pipelines both live; Windows `.msi` launch still
-unverified (no Windows box).
+**Notes** — Release tag form is short `vX.Y` (→ `v2.6`), not full SemVer. Desktop
+pipeline unchanged: `desktop-v2.5.1` live; Windows `.msi` launch still unverified
+(no Windows box).
