@@ -80,20 +80,31 @@ work readout line, rest shows only the countdown, no layout shift. Still as-buil
 accepted): (2) total-time stat + settings hint INCLUDE rest (full wall-clock); (3) early-ended
 rounds practice counts as 1 round.
 
+## Roadmap — Stretch Warm-up "Off" + 1 min (shipped as v2.6.1, PR #8)
+
+Operator request: allow a Stretch session to start directly on the ramp (no warm-up hold),
+and add a 1-min short hold. `WarmUpMinutes` gains `0` and `1` (stepper now: Off · 1 · 2 · 3 · 4 · 5 · 10).
+
+- [x] `WarmUpMinutes = 0 | 1 | 2 | 3 | 4 | 5 | 10`; `0`/`1` added to `WARMUP_MINUTES_OPTIONS` (validator + form pick up automatically).
+- [x] `buildStretchSegments` omits the `hold-initial` segment when `warmUpMinutes === 0` — the `Math.max(1, …)` cycle floor would otherwise inject a one-breath hold. Ramp step `i=0` is already at `initialBpm`, so the session still begins there, at `t=0`.
+- [x] `formatWarmUp` renders `0` as "Off" (new i18n `holdOffLabel`, EN + pt-BR); operator chose "Off" for both locales.
+- [x] Tests: new `buildStretchSegments` warm-up-0 case + updated `isValidWarmUp` predicate; full suite 1422 passing. Operator-tested Off end-to-end.
+
 ## Now
 
-**State** — Two milestones SHIPPED. (1) Rounds: PR #7 merged @ `918d084`, web live as
-**v2.6** (`versions.json` official=v2.6, Pages deploy green); issue #4 closed. (2) Desktop
-**`desktop-v1.0.0`** merged @ `72e2f53` — wrapper version decoupled from the app (tag-driven),
-Linux added (`.deb`/`.rpm`/`.AppImage`), `desktop-v2.5.1` deleted so v1.0.0 is the sole
-desktop release. Both pipelines green; full suite **1421 passing**; tree clean.
+**State** — Latest ship: **Stretch Warm-up "Off" + 1 min** (PR #8 merged @ `7cac916`),
+released as patch **v2.6.1** — `v2.6` tag moved `5530365 → 7cac916` + force-pushed, deploy
+`28192979950` green (all 7 jobs), root `/hrv/` and `/hrv/v2.6/` both 200. Earlier milestones
+still standing: Rounds (web v2.6, issue #4 closed) and Desktop `desktop-v1.0.0` (tag-driven
+version, Linux `.deb`/`.rpm`/`.AppImage`). Full suite **1422 passing**; `main` synced; tree clean.
 
-**Next** — Nothing outstanding. Future desktop installers only when the Pake shell changes
-(push a new `desktop-v*` tag); web releases reach desktop automatically via the live URL.
+**Next** — Nothing outstanding. No `desktop-v*` re-release needed (desktop loads the live URL,
+picks up v2.6.1 automatically). Future patches: move the `v2.6` tag; future minors: new `vX.Y` tag.
 
 **Open questions** — None blocking. Rounds simplifications (2) total-time includes rest and
 (3) early-end counts as 1 round remain accepted as-built.
 
-**Notes** — Tag forms: web short `vX.Y` (→ `v2.6`); desktop full SemVer `desktop-vX.Y.Z`
-(→ `desktop-v1.0.0`). Desktop launch still unverified on Windows + Linux (no boxes); macOS
-confirmed. macOS dmg bundling is flaky — the workflow retries the pake build (×3).
+**Notes** — Patch releases reuse the `vX.Y` slot by force-moving the annotated tag (runbook
+`.project/DEPLOYMENT.md`). Tag forms: web short `vX.Y` (→ `v2.6`); desktop full SemVer
+`desktop-vX.Y.Z` (→ `desktop-v1.0.0`). Desktop launch still unverified on Windows + Linux
+(no boxes); macOS confirmed. macOS dmg bundling is flaky — the workflow retries pake (×3).
