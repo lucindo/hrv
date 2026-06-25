@@ -90,6 +90,18 @@ describe('buildStretchSegments (single-arg, StretchSettings — D-02)', () => {
     expect(first?.endSec).toBe(5 * 60)
   })
 
+  it('warmUpMinutes 0 ("Off") omits the hold: first segment is the ramp at initialBpm', () => {
+    const segs = buildStretchSegments({ ...baseSettings, warmUpMinutes: 0 })
+    expect(segs.some(s => s.stage === 'hold-initial')).toBe(false)
+    const first = segs[0]
+    expect(first?.stage).toBe('ramp')
+    // Ramp step i=0 sits at initialBpm, so the session still begins there — and at t=0.
+    expect(first?.bpm).toBe(baseSettings.initialBpm)
+    expect(first?.startSec).toBe(0)
+    // Realized total drops by the omitted 5-min warm-up: ramp 20 + cool-down 5 = 25 min.
+    expect(computeStretchTotalSec({ ...baseSettings, warmUpMinutes: 0 })).toBe(25 * 60)
+  })
+
   it('cool-down segment is always present: last segment is hold-target at targetBpm', () => {
     const segs = buildStretchSegments(baseSettings)
     const last = segs[segs.length - 1]

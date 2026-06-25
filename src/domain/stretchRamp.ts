@@ -51,6 +51,7 @@ export interface StretchSessionFrame extends SessionFrame {
  *
  * Step 1: warm-up hold at initialBpm for warmUpMinutes — snapped to whole cycles so
  *         the boundary lands on an Out→In transition (BPM never steps mid-breath).
+ *         warmUpMinutes 0 ("Off") omits this segment so the session starts on the ramp.
  * Step 2: ramp — numSteps = ceil((initialBpm - targetBpm) / 0.4999) segments, linear
  *         BPM step i: bpm_i = initialBpm - i * (initialBpm - targetBpm) / numSteps.
  *         Every ramp step is snapped to whole cycles for the same reason.
@@ -142,10 +143,15 @@ export function buildStretchSegments(settings: StretchSettings): StretchSegment[
     return seg
   }
 
-  // Step 1: warm-up hold at initialBpm (always present — minimum 2 min).
-  // Snapped to whole cycles so the warm-up boundary lands on an Out→In transition.
-  // Holds the start ratio's inhale fraction.
-  segments.push(makeSegment(initialBpm, warmUpMinutes * 60, 'hold-initial', startInhalePct))
+  // Step 1: warm-up hold at initialBpm. Omitted entirely when warmUpMinutes is 0
+  // ("Off") — otherwise makeSegment's Math.max(1, …) cycle floor would inject a
+  // one-breath hold instead of starting straight on the ramp. The ramp's first step
+  // (i=0) is already at initialBpm, so skipping the hold still begins the session at
+  // initialBpm. When present, snapped to whole cycles so the boundary lands on an
+  // Out→In transition; holds the start ratio's inhale fraction.
+  if (warmUpMinutes > 0) {
+    segments.push(makeSegment(initialBpm, warmUpMinutes * 60, 'hold-initial', startInhalePct))
+  }
 
   // Step 2: ramp — each step is strictly < 0.5 BPM by construction.
   // Every ramp step is also snapped to whole cycles for the same Out→In boundary reason.

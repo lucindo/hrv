@@ -89,6 +89,7 @@ export interface UiStrings {
       readonly holdTargetLabel: string
       readonly rampDurationLabel: string
       readonly holdOpenEndedLabel: string
+      readonly holdOffLabel: string
       readonly roundsToggleLabel: string
       readonly roundsCountLabel: string
       readonly restBetweenLabel: string
@@ -323,6 +324,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         holdTargetLabel: 'Settle',
         rampDurationLabel: 'Stretch',
         holdOpenEndedLabel: '∞',
+        holdOffLabel: 'Off',
         roundsToggleLabel: 'Rounds',
         roundsCountLabel: 'Number of rounds',
         restBetweenLabel: 'Rest between rounds',
@@ -531,6 +533,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         holdTargetLabel: 'Estabilizar',
         rampDurationLabel: 'Progressão',
         holdOpenEndedLabel: '∞',
+        holdOffLabel: 'Off',
         roundsToggleLabel: 'Rodadas',
         roundsCountLabel: 'Número de rodadas',
         restBetweenLabel: 'Descanso entre rodadas',

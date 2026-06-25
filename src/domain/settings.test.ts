@@ -212,14 +212,15 @@ describe('isValidLocale (INFRA-02 D-01)', () => {
 // Stretch predicate tests (isValidMode was removed — these remain)
 
 describe('isValidWarmUp (STRETCH-03, D-07)', () => {
-  it('returns true for WARMUP_MINUTES_OPTIONS members (2, 3, 4, 5, 10)', () => {
+  it('returns true for WARMUP_MINUTES_OPTIONS members (0, 1, 2, 3, 4, 5, 10)', () => {
+    expect(isValidWarmUp(0)).toBe(true)
+    expect(isValidWarmUp(1)).toBe(true)
     expect(isValidWarmUp(2)).toBe(true)
     expect(isValidWarmUp(5)).toBe(true)
     expect(isValidWarmUp(10)).toBe(true)
   })
 
-  it('returns false for non-option numbers (0, 7, 15, -1)', () => {
-    expect(isValidWarmUp(0)).toBe(false)
+  it('returns false for non-option numbers (7, 15, -1)', () => {
     expect(isValidWarmUp(7)).toBe(false)
     expect(isValidWarmUp(15)).toBe(false)
     expect(isValidWarmUp(-1)).toBe(false)

@@ -1,11 +1,12 @@
 export type DurationOption = number | 'open-ended'
 
 // Stretch stage durations are minute-based: Warm-up (initial-BPM hold), Ramp
-// (the BPM walk-down), and Cool-down (target-BPM hold). The structural minimum
-// total is 2 + 2 + 2 = 6 min, so no separate "session long enough" gate is needed.
-export type WarmUpMinutes = 2 | 3 | 4 | 5 | 10
+// (the BPM walk-down), and Cool-down (target-BPM hold). Warm-up 0 ("Off") skips the
+// hold so the session starts directly on the ramp. The structural minimum total is
+// 0 + 2 + 2 = 4 min, so no separate "session long enough" gate is needed.
+export type WarmUpMinutes = 0 | 1 | 2 | 3 | 4 | 5 | 10
 
-export const WARMUP_MINUTES_OPTIONS = [2, 3, 4, 5, 10] as const satisfies readonly WarmUpMinutes[]
+export const WARMUP_MINUTES_OPTIONS = [0, 1, 2, 3, 4, 5, 10] as const satisfies readonly WarmUpMinutes[]
 
 export type CoolDownMinutes = 2 | 3 | 4 | 5 | 10 | 15 | 20 | 25 | 30 | 'open-ended'
 
