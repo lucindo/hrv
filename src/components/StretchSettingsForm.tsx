@@ -52,6 +52,8 @@ export function StretchSettingsForm({
 }: StretchSettingsFormProps): ReactElement {
   const formatBpm = (value: number): string => `${formatTrimmed(value)} ${strings.bpmUnit}`
   const formatMinutes = (value: number): string => `${String(value)} ${strings.minutesUnit}`
+  const formatWarmUp = (value: WarmUpMinutes): string =>
+    value === 0 ? strings.holdOffLabel : `${String(value)} ${strings.minutesUnit}`
   const formatCoolDown = (value: CoolDownMinutes): string =>
     value === 'open-ended' ? strings.holdOpenEndedLabel : `${String(value)} ${strings.minutesUnit}`
 
@@ -170,7 +172,7 @@ export function StretchSettingsForm({
             label={strings.holdInitialLabel}
             value={settings.warmUpMinutes}
             options={WARMUP_MINUTES_OPTIONS}
-            formatValue={formatMinutes}
+            formatValue={formatWarmUp}
             onChange={(warmUpMinutes) => { updateStretchSettings({ warmUpMinutes }) }}
             strings={strings.stepper}
           />
