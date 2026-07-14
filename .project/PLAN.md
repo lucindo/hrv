@@ -90,21 +90,33 @@ and add a 1-min short hold. `WarmUpMinutes` gains `0` and `1` (stepper now: Off 
 - [x] `formatWarmUp` renders `0` as "Off" (new i18n `holdOffLabel`, EN + pt-BR); operator chose "Off" for both locales.
 - [x] Tests: new `buildStretchSegments` warm-up-0 case + updated `isValidWarmUp` predicate; full suite 1422 passing. Operator-tested Off end-to-end.
 
+## Roadmap — Lock viewport zoom (shipped as v2.6.2, PR #9)
+
+Operator request: disallow zooming the app. Decision VP-1 in `DECISIONS.md`.
+
+- [x] `index.html` viewport meta → `maximum-scale=1.0, user-scalable=no` (`5f993d3`).
+- [x] Bump `package.json` → `2.6.2`; build green; viewport confirmed in `dist/index.html`.
+- [x] PR #9 merged (`10b5937`); `v2.6` tag force-moved `e3767b2 → 10b5937`; deploy
+  `29334951869` green (7/7), root `/hrv/` + `/hrv/v2.6/` both 200, locked viewport live.
+
 ## Now
 
-**State** — Latest ship: **Stretch Warm-up "Off" + 1 min** (PR #8 merged @ `7cac916`),
-released as patch **v2.6.1** — `v2.6` tag moved `5530365 → 7cac916` + force-pushed, deploy
-`28192979950` green (all 7 jobs), root `/hrv/` and `/hrv/v2.6/` both 200. Earlier milestones
-still standing: Rounds (web v2.6, issue #4 closed) and Desktop `desktop-v1.0.0` (tag-driven
-version, Linux `.deb`/`.rpm`/`.AppImage`). Full suite **1422 passing**; `main` synced; tree clean.
+**State** — Latest ship: **Lock viewport zoom** (PR #9 merged @ `10b5937`), released as
+patch **v2.6.2** — `v2.6` tag moved `e3767b2 → 10b5937` + force-pushed, deploy `29334951869`
+green (7/7), root `/hrv/` and `/hrv/v2.6/` both 200, `user-scalable=no` live. Earlier
+milestones still standing: Warm-up Off (v2.6.1), Rounds (issue #4 closed), Desktop
+`desktop-v1.0.0`. `main` synced; tree clean.
 
 **Next** — Nothing outstanding. No `desktop-v*` re-release needed (desktop loads the live URL,
-picks up v2.6.1 automatically). Future patches: move the `v2.6` tag; future minors: new `vX.Y` tag.
+picks up v2.6.2 automatically). Future patches: move the `v2.6` tag; future minors: new `vX.Y` tag.
 
 **Open questions** — None blocking. Rounds simplifications (2) total-time includes rest and
 (3) early-end counts as 1 round remain accepted as-built.
 
+**Watch** — `user-scalable=no` disables pinch-zoom (WCAG 1.4.4); accepted, but revisit if
+low-vision access is reported. Desktop launch still unverified on Windows + Linux (no boxes);
+macOS confirmed. macOS dmg bundling flaky — workflow retries pake (×3).
+
 **Notes** — Patch releases reuse the `vX.Y` slot by force-moving the annotated tag (runbook
 `.project/DEPLOYMENT.md`). Tag forms: web short `vX.Y` (→ `v2.6`); desktop full SemVer
-`desktop-vX.Y.Z` (→ `desktop-v1.0.0`). Desktop launch still unverified on Windows + Linux
-(no boxes); macOS confirmed. macOS dmg bundling is flaky — the workflow retries pake (×3).
+`desktop-vX.Y.Z` (→ `desktop-v1.0.0`).

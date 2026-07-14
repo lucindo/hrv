@@ -362,6 +362,24 @@ finish the breath — exactly as HRV already runs past its displayed duration. T
 segment table itself is unchanged (`endSec` still == requested total), so
 `buildStretchSegments` / `computeStretchTotalSec` and their docstrings remain accurate.
 
+---
+
+# Decision — Lock viewport zoom (2026-07-14)
+
+Source: operator request — disallow zooming the app.
+
+## VP-1 — Disable pinch/double-tap zoom via the viewport meta
+
+**Q:** Allow browser zoom, or lock it?
+
+**Decision:** Lock it. `index.html` viewport meta →
+`width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no`.
+Shipped as patch **2.6.2** (web tag `v2.6` force-moved, PR #9).
+
+**Tradeoff (accepted):** `user-scalable=no` disables pinch-zoom — cuts against WCAG
+1.4.4 (users who rely on zoom for low vision). The a11y cost was surfaced and accepted
+per explicit operator request.
+
 **Rationale:** Cross-practice consistency — a guided breath should never be cut
 mid-exhale. The sub-cycle overrun is the same accepted behavior HRV ships.
 
