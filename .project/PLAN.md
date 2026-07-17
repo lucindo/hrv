@@ -1,15 +1,8 @@
-# Plan: Advanced precise-control (free-set velocity & ratio)
+# Plan
 
-Source: `/ds-grill-me` 2026-06-16, decisions D-Q1..Q11 in `.project/DECISIONS.md`.
-Prior plan (SSOT cleanup) shipped as v2.4.1 — see git / DECISIONS history.
-
-Goal: one opt-in `prefs.advanced` toggle swaps fixed pickers for continuous
-sliders across HRV, Stretch, and Navi. Model collapses to bounded numbers;
-discrete presets become a UI view + snap-on-toggle-off.
-
-<!-- Completed roadmap sections (Advanced precise-control, Native desktop apps,
-Interval Rounds, Stretch Warm-up Off, Lock viewport zoom) archived 2026-07-17 to
-`.project/archive/PLAN-2026-07-17.md` by `/ds-project-compact`. -->
+<!-- Prior plan framing (Advanced precise-control) and all completed roadmap sections
+were archived 2026-07-17 to `.project/archive/PLAN-2026-07-17.md` by `/ds-project-compact`.
+When the next work item starts, its roadmap goes above `## Now`; `## Now` always stays last. -->
 
 ## Now
 
