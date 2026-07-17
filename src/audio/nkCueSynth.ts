@@ -27,6 +27,12 @@ import { CLEANUP_PADDING_SEC, NEAR_SILENCE, STRIKE_RAMP_OFFSET } from './audioCo
 const NK_TICK_DURATION_SEC = 0.12
 const NK_TICK_PEAK_GAIN = 0.13 // J16: bumped from 0.08 — still peripheral, slightly more audible per operator UAT
 const NK_TICK_DECAY_TAU = 0.05
+// Final-OM tick: the per-OM tick pitched a perfect fifth above the fundamental
+// (A4 440 → E5 660). Sounds only on the LAST OM of a count so the yogi can
+// anticipate the phase switch. A ratio (not a hard 660) so it tracks any future
+// per-timbre fundamental. Reuses the tick's duration/gain/decay — same soft
+// character, pitch only.
+const NK_FINAL_TICK_PITCH_RATIO = 1.5
 // Countdown beep: the 3-2-1 lead-in tick, shared by the HRV and Navi countdowns.
 // A crisper, higher, snappier beep that reads as more alerting without being louder.
 // Kept on its own constants + function so the countdown beep and the per-OM tick
@@ -211,6 +217,37 @@ export function scheduleNKTick(
   // cancel() — stop oscillator + disconnect chain. Same try/catch posture as the
   // 'ended' listener above. The 'ended' listener and cancel() may both fire;
   // both must be safe (idempotent).
+  const cancel = (): void => {
+    t.envelope.gain.cancelScheduledValues(audioCtx.currentTime)
+    try { t.osc.stop(audioCtx.currentTime) } catch { /* silent — osc may already be stopped */ }
+    disconnectToneNodes(t)
+  }
+
+  return { envelope: t.envelope, scheduledAt: when, cleanupAt: t.cleanupAt, cancel }
+}
+
+/**
+ * Final-OM tick — the per-OM tick pitched a perfect fifth above the fundamental
+ * (see NK_FINAL_TICK_PITCH_RATIO). Same soft, short character as scheduleNKTick;
+ * only the pitch differs, marking the last OM of a count so the practitioner can
+ * anticipate the phase switch. Reuses the tick's duration/gain/decay constants.
+ */
+export function scheduleNKFinalTick(
+  audioCtx: AudioContext,
+  when: number,
+  destination: AudioNode,
+  timbre: TimbreId,
+): CueHandle {
+  const preset = TIMBRE_PRESETS[timbre]
+  const t = buildNKToneNodes(
+    audioCtx, preset.fundamentalHzIn * NK_FINAL_TICK_PITCH_RATIO, NK_TICK_DURATION_SEC, when,
+    destination, preset, NK_TICK_PEAK_GAIN, NK_TICK_DECAY_TAU,
+  )
+  // Disconnect the tick nodes on 'ended' (mirrors scheduleNKTick).
+  t.osc.addEventListener('ended', () => { disconnectToneNodes(t) }, { once: true })
+
+  // cancel() — stop oscillator + disconnect chain. Same idempotent posture as
+  // scheduleNKTick; the 'ended' listener and cancel() may both fire.
   const cancel = (): void => {
     t.envelope.gain.cancelScheduledValues(audioCtx.currentTime)
     try { t.osc.stop(audioCtx.currentTime) } catch { /* silent — osc may already be stopped */ }
