@@ -54,6 +54,10 @@ export interface NKAudioCallbacks {
   frontMarker(): void
   backMarker(): void
   tick(): void
+  // Distinct cue for the LAST OM of a count (front's frontCount-th, back's
+  // backCount-th) so the practitioner can anticipate the phase switch. Optional:
+  // when the audio layer supplies none, the engine falls back to tick().
+  finalTick?(): void
   endCue(): void
 }
 
@@ -155,11 +159,18 @@ export function useNKEngine(clock: SessionClock): NKEngineApi {
     e.count += 1
     setNkCount(e.count)
 
-    if (e.cueOn && cbs) cbs.tick()
-
     const target = e.phase === 'front' ? e.frontCount : e.backCount
+    const isFinalOm = e.count >= target
 
-    if (e.count >= target) {
+    if (e.cueOn && cbs) {
+      // Last OM of the count gets a distinct cue (a fifth above) so the yogi can
+      // anticipate the phase switch; every other OM gets the plain tick. Falls
+      // back to tick() when the audio layer supplies no finalTick.
+      if (isFinalOm && cbs.finalTick) cbs.finalTick()
+      else cbs.tick()
+    }
+
+    if (isFinalOm) {
       // Last OM of the phase: arm pendingTransition so the NEXT stepOm changes
       // phase instead of counting (the last count is shown, not flashed). It
       // also holds longer than a normal OM (NK_LAST_OM_HOLD_MULTIPLIER × omSec)
