@@ -42,6 +42,24 @@ describe('useNaviKriyaAudio', () => {
     expect(countdownSpy).not.toHaveBeenCalled()
   })
 
+  it('finalTick routes to scheduleNKFinalTick and respects mute', () => {
+    const finalSpy = vi.spyOn(nkCueSynth, 'scheduleNKFinalTick')
+
+    // Unmuted: finalTick schedules the distinct final-OM cue.
+    const live = renderHook(() => useNaviKriyaAudio(false))
+    const liveSession = live.result.current.begin(() => 'sine')
+    expect(typeof liveSession.callbacks.finalTick).toBe('function')
+    liveSession.callbacks.finalTick?.()
+    expect(finalSpy).toHaveBeenCalledTimes(1)
+
+    finalSpy.mockClear()
+
+    // Muted: finalTick suppressed, like every other cue.
+    const muted = renderHook(() => useNaviKriyaAudio(true))
+    muted.result.current.begin(() => 'sine').callbacks.finalTick?.()
+    expect(finalSpy).not.toHaveBeenCalled()
+  })
+
   it('closes a live AudioContext on unmount', () => {
     const OriginalAudioContext = window.AudioContext
     const audioContexts: AudioContext[] = []

@@ -6,6 +6,7 @@ import {
   scheduleCountdownTick,
   scheduleEndChord,
   scheduleNKBackMarker,
+  scheduleNKFinalTick,
   scheduleNKFrontMarker,
   scheduleNKTick,
 } from '../audio/nkCueSynth'
@@ -150,6 +151,9 @@ export function useNaviKriyaAudio(
         },
         tick: () => {
           if (!mutedRef.current) scheduleNKTick(audioCtx, cueWhen(), audioCtx.destination, timbre)
+        },
+        finalTick: () => {
+          if (!mutedRef.current) scheduleNKFinalTick(audioCtx, cueWhen(), audioCtx.destination, timbre)
         },
         endCue: () => {
           if (!mutedRef.current) scheduleEndChord(audioCtx, cueWhen(), audioCtx.destination, timbre)
