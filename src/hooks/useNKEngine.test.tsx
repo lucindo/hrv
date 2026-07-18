@@ -251,6 +251,37 @@ describe('useNKEngine', () => {
     unmount()
   })
 
+  // NK-09: with distinctFinalTick off, the last OM fires the plain tick — the
+  // gate suppresses finalTick even though perOmCue is on.
+  it('NK-09: distinctFinalTick=false plays the normal tick on the final OM (no finalTick)', () => {
+    const cbs = makeCallbacks()
+    const settings: NaviKriyaSettings = {
+      frontCount: 8,   // backCount = 2
+      omSeconds: NK_OM_SECONDS.fast,
+      rounds: 1,
+      perOmCue: true,
+      distinctFinalTick: false,
+    }
+    const omMs = NK_OM_SECONDS['fast'] * 1000
+    const { result, unmount } = renderHook(() => useNKEngine(makeClock()))
+
+    act(() => { result.current.start(settings, cbs, vi.fn()) })
+
+    act(() => {
+      vi.advanceTimersByTime(
+        NK_LEAD_MS_FOR_TIMERS + omMs * 8.5
+        + NK_LEAD_MS_FOR_TIMERS + omMs * 2.5
+        + 500,
+      )
+    })
+
+    // Every OM (incl. front #8 and back #2) fires the plain tick = 10; finalTick never.
+    expect(cbs.finalTick).not.toHaveBeenCalled()
+    expect(cbs.tick).toHaveBeenCalledTimes(10)
+
+    unmount()
+  })
+
   // NK-07: end() resets to idle and fires onComplete with isComplete:false
   it('NK-07: end() resets to idle and fires onComplete with isComplete:false', () => {
     const cbs = makeCallbacks()

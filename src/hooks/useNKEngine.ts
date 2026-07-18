@@ -34,6 +34,7 @@ interface NKEngineRecord {
   rounds: number
   omSec: number            // settings.omSeconds (seconds-shaped)
   cueOn: boolean           // mirrors perOmCue; mutable for live toggle via toggleCue()
+  finalCueOn: boolean      // mirrors distinctFinalTick; gates the distinct final-OM cue
   startedAtSec: number     // clock.now() at start — for elapsed stats (seconds-shaped)
   completedRounds: number  // fully-completed rounds (for early-end stats)
   // Delay (seconds) of the currently-pending step timer. Markers schedule the
@@ -164,9 +165,9 @@ export function useNKEngine(clock: SessionClock): NKEngineApi {
 
     if (e.cueOn && cbs) {
       // Last OM of the count gets a distinct cue (a fifth above) so the yogi can
-      // anticipate the phase switch; every other OM gets the plain tick. Falls
-      // back to tick() when the audio layer supplies no finalTick.
-      if (isFinalOm && cbs.finalTick) cbs.finalTick()
+      // anticipate the phase switch — only when distinctFinalTick is on and the
+      // audio layer supplies finalTick; otherwise every OM gets the plain tick.
+      if (isFinalOm && e.finalCueOn && cbs.finalTick) cbs.finalTick()
       else cbs.tick()
     }
 
@@ -205,6 +206,7 @@ export function useNKEngine(clock: SessionClock): NKEngineApi {
       rounds: settings.rounds,
       omSec: settings.omSeconds,
       cueOn: settings.perOmCue,
+      finalCueOn: settings.distinctFinalTick,
       startedAtSec: clock.now(),
       completedRounds: 0,
       // start() schedules the first step with NK_LEAD_SEC.
