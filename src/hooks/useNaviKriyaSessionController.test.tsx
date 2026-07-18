@@ -15,6 +15,7 @@ const defaultSettings: NaviKriyaSettings = {
   omSeconds: NK_OM_SECONDS.medium,
   rounds: 1,
   perOmCue: false,
+  distinctFinalTick: false,
 }
 
 // No-op wake lock test double (matches UseWakeLock interface)

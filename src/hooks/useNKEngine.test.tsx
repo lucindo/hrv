@@ -20,6 +20,7 @@ const defaultSettings: NaviKriyaSettings = {
   omSeconds: NK_OM_SECONDS.medium,
   rounds: 1,
   perOmCue: true,
+  distinctFinalTick: false,
 }
 
 const makeCallbacks = () => ({
@@ -95,6 +96,7 @@ describe('useNKEngine', () => {
       omSeconds: NK_OM_SECONDS.fast,
       rounds: 3,
       perOmCue: false,
+      distinctFinalTick: false,
     }
     const omMs = NK_OM_SECONDS['fast'] * 1000
     const { result, unmount } = renderHook(() => useNKEngine(makeClock()))
@@ -180,6 +182,7 @@ describe('useNKEngine', () => {
         omSeconds: NK_OM_SECONDS.fast,
         rounds: 1,
         perOmCue: false,
+        distinctFinalTick: false,
       }
       const { result, unmount } = renderHook(() => useNKEngine(makeClock()))
       act(() => { result.current.start(settings, cbs, vi.fn()) })
@@ -202,6 +205,7 @@ describe('useNKEngine', () => {
         omSeconds: NK_OM_SECONDS.fast,
         rounds: 1,
         perOmCue: true,
+        distinctFinalTick: false,
       }
       const { result, unmount } = renderHook(() => useNKEngine(makeClock()))
       act(() => { result.current.start(settings, cbs, vi.fn()) })
@@ -224,6 +228,7 @@ describe('useNKEngine', () => {
       omSeconds: NK_OM_SECONDS.fast,
       rounds: 1,
       perOmCue: true,
+      distinctFinalTick: true,
     }
     const omMs = NK_OM_SECONDS['fast'] * 1000
     const { result, unmount } = renderHook(() => useNKEngine(makeClock()))

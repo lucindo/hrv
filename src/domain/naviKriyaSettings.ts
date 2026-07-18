@@ -27,10 +27,11 @@ export const NK_ROUNDS_OPTIONS: readonly number[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 
 export const NK_FRONT_COUNT_OPTIONS: readonly number[] = [100, 200, 300, 400, 500]
 
 export interface NaviKriyaSettings {
-  frontCount: number   // base front OM count; backCount = frontCount / 4; must be multiple of 4
-  omSeconds: number    // seconds per OM (1.0–4.0); engine reads this directly
-  rounds: number       // integer >= 1; default 3
-  perOmCue: boolean    // audible per-OM tick; default true
+  frontCount: number       // base front OM count; backCount = frontCount / 4; must be multiple of 4
+  omSeconds: number        // seconds per OM (1.0–4.0); engine reads this directly
+  rounds: number           // integer >= 1; default 3
+  perOmCue: boolean        // audible per-OM tick; default true
+  distinctFinalTick: boolean // last OM of each count plays a distinct tone; requires perOmCue; default false
 }
 
 export const DEFAULT_NK_SETTINGS: NaviKriyaSettings = {
@@ -38,6 +39,7 @@ export const DEFAULT_NK_SETTINGS: NaviKriyaSettings = {
   omSeconds: NK_OM_SECONDS.medium,
   rounds: 3,
   perOmCue: true,
+  distinctFinalTick: false,
 }
 
 // isValidFrontCount: checks typeof number, Number.isFinite, Number.isInteger, v > 0,

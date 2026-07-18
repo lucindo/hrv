@@ -106,6 +106,7 @@ describe('DEFAULT_NK_SETTINGS (D-02)', () => {
       omSeconds: NK_OM_SECONDS.medium,
       rounds: 3,
       perOmCue: true,
+      distinctFinalTick: false,
     })
   })
 })

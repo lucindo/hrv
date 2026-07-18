@@ -70,6 +70,7 @@ describe('coerceNaviKriyaSettings (D-02 / Pitfall 5 / T-30-06)', () => {
       omSeconds: NK_OM_SECONDS.slow,
       rounds: 5,
       perOmCue: false,
+      distinctFinalTick: true,
     }
     expect(coerceNaviKriyaSettings(valid)).toEqual(valid)
   })
@@ -91,17 +92,19 @@ describe('coerceNaviKriyaSettings (D-02 / Pitfall 5 / T-30-06)', () => {
     expect(coerceNaviKriyaSettings({ frontCount: 'big' }).frontCount).toBe(DEFAULT_NK_SETTINGS.frontCount)
   })
 
-  it('falls back per-field for a drifted omSeconds / rounds / perOmCue', () => {
+  it('falls back per-field for a drifted omSeconds / rounds / perOmCue / distinctFinalTick', () => {
     const drifted = coerceNaviKriyaSettings({
       frontCount: 80,   // 80 is a multiple of 4 but not in new options; snaps to 100
       omSeconds: 9,     // out of the 1.0–4.0 range
       rounds: 0,
       perOmCue: 'yes',
+      distinctFinalTick: 'nope',
     })
     expect(drifted.frontCount).toBe(100)   // 80→snap→100 (nearest option)
     expect(drifted.omSeconds).toBe(DEFAULT_NK_SETTINGS.omSeconds)
     expect(drifted.rounds).toBe(DEFAULT_NK_SETTINGS.rounds)
     expect(drifted.perOmCue).toBe(DEFAULT_NK_SETTINGS.perOmCue)
+    expect(drifted.distinctFinalTick).toBe(DEFAULT_NK_SETTINGS.distinctFinalTick)
   })
 
   it('snaps stale persisted frontCounts to the nearest NK_FRONT_COUNT_OPTIONS entry (260519-91w)', () => {
@@ -154,7 +157,7 @@ describe('coercePractices (PRACTICE-02 / T-30-05)', () => {
     expect(map.resonant.stats).toEqual(statsOf(3))
     expect(map.stretch.settings.initialBpm).toBe(6)
     expect(map.stretch.stats).toEqual(statsOf(2))
-    expect(map.naviKriya.settings).toEqual({ frontCount: 200, omSeconds: NK_OM_SECONDS.slow, rounds: 5, perOmCue: false })
+    expect(map.naviKriya.settings).toEqual({ frontCount: 200, omSeconds: NK_OM_SECONDS.slow, rounds: 5, perOmCue: false, distinctFinalTick: false })
     expect(map.naviKriya.stats).toEqual(statsOf(7))
   })
 
@@ -203,6 +206,7 @@ describe('per-practice round-trips (PRACTICE-02)', () => {
       omSeconds: NK_OM_SECONDS.fast,
       rounds: 4,
       perOmCue: false,
+      distinctFinalTick: false,
     }
     saveNaviKriyaSettings(settings)
     expect(loadPractices().naviKriya.settings).toEqual(settings)
@@ -232,7 +236,7 @@ describe('per-practice round-trips (PRACTICE-02)', () => {
 
   it('saveNaviKriyaSettings leaves the resonant slice untouched', () => {
     saveResonantSettings({ ...DEFAULT_SETTINGS, bpm: 4 })
-    saveNaviKriyaSettings({ frontCount: 80, omSeconds: NK_OM_SECONDS.slow, rounds: 2, perOmCue: true })
+    saveNaviKriyaSettings({ frontCount: 80, omSeconds: NK_OM_SECONDS.slow, rounds: 2, perOmCue: true, distinctFinalTick: false })
     expect(loadPractices().resonant.settings.bpm).toBe(4)
   })
 })
@@ -505,7 +509,7 @@ describe('saveStretchSettings / loadPractices round-trip (Phase 34 T-34-02)', ()
     saveResonantSettings({ ...DEFAULT_SETTINGS, bpm: 4 })
     // Use 200 (a valid NK_FRONT_COUNT_OPTIONS member) so the coercer on load
     // passes it through unchanged and the assertion is unambiguous.
-    saveNaviKriyaSettings({ frontCount: 200, omSeconds: NK_OM_SECONDS.slow, rounds: 2, perOmCue: true })
+    saveNaviKriyaSettings({ frontCount: 200, omSeconds: NK_OM_SECONDS.slow, rounds: 2, perOmCue: true, distinctFinalTick: false })
     saveStretchSettings({ ...DEFAULT_STRETCH_SETTINGS, initialBpm: 6 })
     const map = loadPractices()
     expect(map.resonant.settings.bpm).toBe(4)
