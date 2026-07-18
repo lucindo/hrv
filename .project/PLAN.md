@@ -34,31 +34,35 @@ session (Mute is the only in-session audio control).
 - [x] Slice 1 — domain + persistence: `distinctFinalTick: boolean` on `NaviKriyaSettings` + `DEFAULT_NK_SETTINGS` (false); coerce default-on-read (additive, **no `STATE_VERSION` bump**). (`0ee1904`)
 - [x] Slice 2 — engine gate: `finalCueOn` in the engine record from `settings.distinctFinalTick`; dispatch gates `isFinalOm && finalCueOn && cbs.finalTick`, else normal tick. (`4d67a5d`)
 - [x] Slice 3 — form + i18n: "Distinct last tick" `SettingsToggleRow` (`disabled={!perOmCue}`); `distinctFinalTickLabel` EN "Distinct last tick" / pt-BR "Toque final distinto". (`b4920fc`)
-- [ ] Operator end-to-end test of the toggle → PR + push `feat/nk-final-om-tone` → merge.
+- [x] Operator tested the toggle; **shipped v2.7.0** — PR #10 merged (`2c15f21`), tag `v2.7` deployed & promoted to official. Branch deleted.
 
 ## Now
 
-**State** — Feature branch **`feat/nk-final-om-tone`**, tree clean: Navi Kriya "Distinct last
-tick" — opt-in E5 tone on the last OM of each count (default OFF, enabled only when OM tick is
-on). All 6 code slices done + full suite **1430** green, `tsc`/lint clean. Operator was testing
-the toggle end-to-end at checkpoint — **verdict not yet recorded**. Design + rationale in
-`DECISIONS.md` (NK-FT-1). Latest *shipped* release remains **v2.6.2** (viewport zoom lock), live;
-earlier milestones standing: Warm-up Off (v2.6.1), Rounds (#4), Desktop `desktop-v1.0.0`.
+**State** — **v2.7.0 shipped & live** — Navi Kriya "Distinct last tick" (opt-in E5 tone on the
+last OM of each count, default OFF, enabled only when OM tick is on). PR #10 merged to `main`
+(`2c15f21`); tag `v2.7` deployed green and **promoted to official** (root `/hrv/` = v2.7, also
+`/hrv/v2.7/`; v2.6 stays at `/hrv/v2.6/`). Feature branch deleted (local + remote). Five review
+passes run on the branch (deslop, ts-review, bug-review, test-quality, code-quality) — no
+correctness findings; only comment/doc tidy-ups applied. `main` synced, tree clean. Design +
+rationale in `DECISIONS.md` (NK-FT-1). Earlier milestones standing: viewport zoom lock (v2.6.2),
+Warm-up Off (v2.6.1), Rounds (#4), Desktop `desktop-v1.0.0`.
 
-**Next** — Confirm the operator's end-to-end test verdict on the toggle; if good, open a PR for
-`feat/nk-final-om-tone` (requires a push — confirm first) and merge to `main`. Then a web release
-when ready: new `vX.Y` tag (minor — new feature).
+**Next** — No active work item. Optional follow-ups: `/ds-spec` to fold `distinctFinalTick` into
+`SPEC.md`; the deferred `nkCueSynth` `toCueHandle` refactor (below). Otherwise await next request.
 
-**Open questions** — Operator's final sign-off on the E5 sound *inside the in-app toggle* (the
-console audition was liked; the toggle test was still in progress at checkpoint).
+**Open questions** — None blocking. (E5 sign-off resolved — operator shipped it.)
 
-**Watch** — Nothing on this feature is on origin yet: `main` has 1 unpushed commit (`273d306`),
-and the branch is 7 commits ahead of `main` — its `PLAN.md`/`DECISIONS.md` updates reach `main`
-only via the PR. `SPEC.md` doesn't mention the new Navi setting — consider `/ds-spec` after merge.
-Console audition of NK cues: dev serves modules under the `/hrv/` base, so
-`import('/hrv/src/audio/nkCueSynth.ts')`. Prior watches still stand: `user-scalable=no` vs WCAG
-1.4.4 (accepted); desktop launch unverified on Windows/Linux; macOS dmg bundling flaky (pake ×3).
+**Watch** —
+- `SPEC.md` still doesn't cover the `distinctFinalTick` Navi setting → run `/ds-spec` when convenient.
+- Deferred code-quality item (report-only, non-blocking): `nkCueSynth.ts` now has three copy-paste
+  tick-scheduling twins (`scheduleNKTick` / `scheduleNKFinalTick` / `scheduleCountdownTick`); a
+  `toCueHandle` helper could dedupe the identical `ended`/`cancel` lifecycle plumbing while keeping
+  each cue's constants independent.
+- `package-lock.json` root `version` is intentionally stale (`2.3.3`) — documented in
+  `DEPLOYMENT.md`; on the next dependency change, let the lockfile regenerate that field and commit it.
+- Prior standing watches: `user-scalable=no` vs WCAG 1.4.4 (accepted); desktop launch unverified on
+  Windows/Linux; macOS dmg bundling flaky (pake ×3).
 
-**Notes** — Patch releases reuse the `vX.Y` slot by force-moving the annotated tag (runbook
-`.project/DEPLOYMENT.md`). Tag forms: web short `vX.Y` (→ `v2.6`); desktop full SemVer
-`desktop-vX.Y.Z` (→ `desktop-v1.0.0`).
+**Notes** — Latest shipped is **v2.7.0** (web tag `v2.7`, official). Patch releases reuse the
+`vX.Y` slot by force-moving the annotated tag (runbook `.project/DEPLOYMENT.md`). Tag forms: web
+short `vX.Y` (→ `v2.7`); desktop full SemVer `desktop-vX.Y.Z` (→ `desktop-v1.0.0`).
