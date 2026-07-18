@@ -42,12 +42,13 @@ function NKHarness({
 }
 
 describe('NaviKriyaSettingsForm', () => {
-  it('renders the four NK controls with labels from strings.nkControls', () => {
+  it('renders the five NK controls with labels from strings.nkControls', () => {
     render(<NKHarness />)
     expect(screen.getByRole('group', { name: NK.roundsLabel })).toBeInTheDocument()
     expect(screen.getByRole('group', { name: NK.frontCountLabel })).toBeInTheDocument()
     expect(screen.getByRole('group', { name: NK.omLengthLabel })).toBeInTheDocument()
     expect(screen.getByRole('switch', { name: NK.perOmCueLabel })).toBeInTheDocument()
+    expect(screen.getByRole('switch', { name: NK.distinctFinalTickLabel })).toBeInTheDocument()
   })
 
   it('changing the rounds stepper calls onNKSettingsChange with the updated rounds', async () => {
@@ -95,6 +96,25 @@ describe('NaviKriyaSettingsForm', () => {
     await user.click(screen.getByRole('switch', { name: NK.perOmCueLabel }))
     expect(onChangeSpy).toHaveBeenCalledTimes(1)
     expect((onChangeSpy.mock.calls[0]?.[0] as NaviKriyaSettings).perOmCue).toBe(false)
+  })
+
+  it('toggling the distinct-last-tick cue calls back with the flipped distinctFinalTick', async () => {
+    const user = userEvent.setup()
+    const onChangeSpy = vi.fn()
+    render(<NKHarness initial={{ ...DEFAULT_NK_SETTINGS, perOmCue: true, distinctFinalTick: false }} onChangeSpy={onChangeSpy} />)
+    await user.click(screen.getByRole('switch', { name: NK.distinctFinalTickLabel }))
+    expect(onChangeSpy).toHaveBeenCalledTimes(1)
+    expect((onChangeSpy.mock.calls[0]?.[0] as NaviKriyaSettings).distinctFinalTick).toBe(true)
+  })
+
+  it('the distinct-last-tick toggle is disabled when the per-OM cue is off', () => {
+    render(<NKHarness initial={{ ...DEFAULT_NK_SETTINGS, perOmCue: false }} />)
+    expect(screen.getByRole('switch', { name: NK.distinctFinalTickLabel })).toBeDisabled()
+  })
+
+  it('the distinct-last-tick toggle is enabled when the per-OM cue is on', () => {
+    render(<NKHarness initial={{ ...DEFAULT_NK_SETTINGS, perOmCue: true }} />)
+    expect(screen.getByRole('switch', { name: NK.distinctFinalTickLabel })).toBeEnabled()
   })
 
   it('D-14: the estimated-duration line has aria-live="polite" and updates live with rounds', async () => {
