@@ -213,7 +213,8 @@ describe('useNKEngine', () => {
       act(() => {
         vi.advanceTimersByTime(NK_LEAD_MS_FOR_TIMERS + omMs * 4 + 100)
       })
-      // perOmCue on ⇒ one cue per front OM = 4 (tick on OMs 1–3, finalTick on #4).
+      // perOmCue on ⇒ one cue per front OM = 4 (all plain ticks — distinctFinalTick
+      // is off here; the finalTick-on-#4 path is covered by NK-08).
       const cueCalls = cbs.tick.mock.calls.length + cbs.finalTick.mock.calls.length
       expect(cueCalls).toBeGreaterThanOrEqual(4)
       unmount()
