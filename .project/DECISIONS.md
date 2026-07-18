@@ -55,3 +55,29 @@ per explicit operator request.
 installed as a PWA and wrapped in the Pake desktop shell — where an accidental pinch or
 double-tap zoom shifts the layout and disrupts a guided session. Locking the viewport
 keeps it stable and app-like; the a11y cost is the accepted tradeoff above.
+
+---
+
+# Decision — Navi Kriya distinct final-OM tick (2026-07-18)
+
+Source: user request (Joey, Forrest's sangha) — every OM ticks the same A note, so the
+practitioner can't anticipate the front→back / round switch and rushes it. Built on branch
+`feat/nk-final-om-tone`.
+
+## NK-FT-1 — Distinct tone on the last OM of each count, opt-in
+
+**Q:** How to signal the final OM of each count (front `frontCount`-th, back `backCount`-th)?
+Always-on or a setting? Which sound?
+
+**Decision:** Play the per-OM tick a **perfect fifth above** the standard on the final OM only —
+A4 440 Hz → **E5 660 Hz** (ratio 1.5, the interval the 3-2-1 countdown beep already uses), same
+soft-tick character, pitch only. Gate it behind a new opt-in Navi setting **`distinctFinalTick`
+(default OFF)**, surfaced as a "Distinct last tick" toggle enabled only when "OM tick" (`perOmCue`)
+is on (grayed otherwise). No mid-session live toggle — Navi settings aren't editable during a
+session (Mute is the only in-session audio control). Persistence is additive:
+`coerceNaviKriyaSettings` defaults it on read, **no `STATE_VERSION` bump**.
+
+**Rationale:** The fifth-above tone is consonant and already in the app's vocabulary; reusing
+the tick recipe keeps the "peripheral" character the user likes. Default-OFF (operator reversed
+an initial always-on plan after auditioning) keeps the out-of-box experience unchanged while
+letting users who want the cue enable it.

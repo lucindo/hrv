@@ -38,22 +38,26 @@ session (Mute is the only in-session audio control).
 
 ## Now
 
-**State** — In flight on branch **`feat/nk-final-om-tone`** (8 commits, not pushed): Navi
-Kriya "Distinct last tick" — an opt-in E5 tone on the last OM of each count (default OFF,
-gated on OM tick). All slices coded + green (full suite **1430**); operator testing the
-toggle end-to-end. Latest *shipped* release is still **v2.6.2** (viewport zoom lock), live.
-Earlier milestones standing: Warm-up Off (v2.6.1), Rounds (issue #4 closed), Desktop
-`desktop-v1.0.0`.
+**State** — Feature branch **`feat/nk-final-om-tone`**, tree clean: Navi Kriya "Distinct last
+tick" — opt-in E5 tone on the last OM of each count (default OFF, enabled only when OM tick is
+on). All 6 code slices done + full suite **1430** green, `tsc`/lint clean. Operator was testing
+the toggle end-to-end at checkpoint — **verdict not yet recorded**. Design + rationale in
+`DECISIONS.md` (NK-FT-1). Latest *shipped* release remains **v2.6.2** (viewport zoom lock), live;
+earlier milestones standing: Warm-up Off (v2.6.1), Rounds (#4), Desktop `desktop-v1.0.0`.
 
-**Next** — Operator finishes testing the toggle → open PR for `feat/nk-final-om-tone` (needs
-a push) → merge to `main`. Then a web release when ready: new `vX.Y` tag (minor — new feature).
+**Next** — Confirm the operator's end-to-end test verdict on the toggle; if good, open a PR for
+`feat/nk-final-om-tone` (requires a push — confirm first) and merge to `main`. Then a web release
+when ready: new `vX.Y` tag (minor — new feature).
 
-**Open questions** — None blocking. Rounds simplifications (2) total-time includes rest and
-(3) early-end counts as 1 round remain accepted as-built.
+**Open questions** — Operator's final sign-off on the E5 sound *inside the in-app toggle* (the
+console audition was liked; the toggle test was still in progress at checkpoint).
 
-**Watch** — `user-scalable=no` disables pinch-zoom (WCAG 1.4.4); accepted, but revisit if
-low-vision access is reported. Desktop launch still unverified on Windows + Linux (no boxes);
-macOS confirmed. macOS dmg bundling flaky — workflow retries pake (×3).
+**Watch** — Nothing on this feature is on origin yet: `main` has 1 unpushed commit (`273d306`),
+and the branch is 7 commits ahead of `main` — its `PLAN.md`/`DECISIONS.md` updates reach `main`
+only via the PR. `SPEC.md` doesn't mention the new Navi setting — consider `/ds-spec` after merge.
+Console audition of NK cues: dev serves modules under the `/hrv/` base, so
+`import('/hrv/src/audio/nkCueSynth.ts')`. Prior watches still stand: `user-scalable=no` vs WCAG
+1.4.4 (accepted); desktop launch unverified on Windows/Linux; macOS dmg bundling flaky (pake ×3).
 
 **Notes** — Patch releases reuse the `vX.Y` slot by force-moving the annotated tag (runbook
 `.project/DEPLOYMENT.md`). Tag forms: web short `vX.Y` (→ `v2.6`); desktop full SemVer
