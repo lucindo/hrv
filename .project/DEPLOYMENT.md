@@ -118,6 +118,14 @@ action deprecation warnings (`actions/checkout@v4` etc.) — cosmetic, not a fai
 - **`workflow_dispatch` skips `build-current`** (no pushed tag) and reads
   `versions.json` from `main`. Good for re-deploying root after an `official` edit;
   it will NOT (re)publish a version subpath.
+- **`package-lock.json`'s own `version` field is intentionally left stale** — it sits
+  at `2.3.3` and has NOT tracked `package.json` through 2.4→2.7. `npm ci` validates the
+  **dependency tree** against `package.json`'s ranges, not the project's root `version`,
+  so the drift is harmless (every release since 2.3 deployed fine). We therefore do
+  **not** bump it on a version-only release. **Reminder for next time a dependency
+  changes:** regenerating the lockfile (`npm install` / `npm i <pkg>`) will rewrite that
+  field to the then-current `package.json.version` — let it, and include it in the same
+  commit. Don't hand-sync it on its own otherwise.
 
 ## Desktop releases (Pake)
 

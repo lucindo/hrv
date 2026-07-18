@@ -107,6 +107,7 @@ export interface UiStrings {
       readonly perOmCueLabel: string
       readonly perOmCueOn: string
       readonly perOmCueOff: string
+      readonly distinctFinalTickLabel: string
       readonly estimatedDuration: (minutes: number) => string
     }
     readonly nkReadout: {
@@ -342,6 +343,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         perOmCueLabel: 'OM tick',
         perOmCueOn: 'On',
         perOmCueOff: 'Off',
+        distinctFinalTickLabel: 'Distinct last tick',
         estimatedDuration: (m) => `~${String(m)} min`,
       },
       nkReadout: {
@@ -551,6 +553,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         perOmCueLabel: 'Toque do OM',
         perOmCueOn: 'Ligado',
         perOmCueOff: 'Desligado',
+        distinctFinalTickLabel: 'Toque final distinto',
         estimatedDuration: (m) => `~${String(m)} min`,
       },
       nkReadout: {

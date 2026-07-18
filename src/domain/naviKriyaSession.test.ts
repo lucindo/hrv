@@ -44,6 +44,7 @@ describe('Navi Kriya session calculations', () => {
       omSeconds: NK_OM_SECONDS.slow,
       rounds: 2,
       perOmCue: true,
+      distinctFinalTick: false,
     }
     expect(estimateNaviKriyaDurationSec(settings)).toBeCloseTo(1526, 5)
   })

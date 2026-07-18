@@ -98,6 +98,7 @@ export function coerceNaviKriyaSettings(raw: unknown): NaviKriyaSettings {
     omSeconds: isValidOmSeconds(r.omSeconds) ? r.omSeconds : DEFAULT_NK_SETTINGS.omSeconds,
     rounds:   isValidRounds(r.rounds)     ? r.rounds   : DEFAULT_NK_SETTINGS.rounds,
     perOmCue: typeof r.perOmCue === 'boolean' ? r.perOmCue : DEFAULT_NK_SETTINGS.perOmCue,
+    distinctFinalTick: typeof r.distinctFinalTick === 'boolean' ? r.distinctFinalTick : DEFAULT_NK_SETTINGS.distinctFinalTick,
   }
 }
 

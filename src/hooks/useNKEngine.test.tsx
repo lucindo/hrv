@@ -20,12 +20,14 @@ const defaultSettings: NaviKriyaSettings = {
   omSeconds: NK_OM_SECONDS.medium,
   rounds: 1,
   perOmCue: true,
+  distinctFinalTick: false,
 }
 
 const makeCallbacks = () => ({
   frontMarker: vi.fn(),
   backMarker: vi.fn(),
   tick: vi.fn(),
+  finalTick: vi.fn(),
   endCue: vi.fn(),
 })
 
@@ -94,6 +96,7 @@ describe('useNKEngine', () => {
       omSeconds: NK_OM_SECONDS.fast,
       rounds: 3,
       perOmCue: false,
+      distinctFinalTick: false,
     }
     const omMs = NK_OM_SECONDS['fast'] * 1000
     const { result, unmount } = renderHook(() => useNKEngine(makeClock()))
@@ -179,6 +182,7 @@ describe('useNKEngine', () => {
         omSeconds: NK_OM_SECONDS.fast,
         rounds: 1,
         perOmCue: false,
+        distinctFinalTick: false,
       }
       const { result, unmount } = renderHook(() => useNKEngine(makeClock()))
       act(() => { result.current.start(settings, cbs, vi.fn()) })
@@ -186,6 +190,7 @@ describe('useNKEngine', () => {
         vi.advanceTimersByTime(NK_LEAD_MS_FOR_TIMERS + omMs * 4 + 100)
       })
       expect(cbs.tick).not.toHaveBeenCalled()
+      expect(cbs.finalTick).not.toHaveBeenCalled()
       unmount()
     }
 
@@ -200,6 +205,7 @@ describe('useNKEngine', () => {
         omSeconds: NK_OM_SECONDS.fast,
         rounds: 1,
         perOmCue: true,
+        distinctFinalTick: false,
       }
       const { result, unmount } = renderHook(() => useNKEngine(makeClock()))
       act(() => { result.current.start(settings, cbs, vi.fn()) })
@@ -207,10 +213,74 @@ describe('useNKEngine', () => {
       act(() => {
         vi.advanceTimersByTime(NK_LEAD_MS_FOR_TIMERS + omMs * 4 + 100)
       })
-      // Should have been called once per front OM = 4 times (back phase not yet complete)
-      expect(cbs.tick.mock.calls.length).toBeGreaterThanOrEqual(4)
+      // perOmCue on ⇒ one cue per front OM = 4 (all plain ticks — distinctFinalTick
+      // is off here; the finalTick-on-#4 path is covered by NK-08).
+      const cueCalls = cbs.tick.mock.calls.length + cbs.finalTick.mock.calls.length
+      expect(cueCalls).toBeGreaterThanOrEqual(4)
       unmount()
     }
+  })
+
+  // NK-08: the LAST OM of each count fires finalTick; every other OM fires tick.
+  it('NK-08: final OM of front and back fires finalTick; other OMs fire tick', () => {
+    const cbs = makeCallbacks()
+    const settings: NaviKriyaSettings = {
+      frontCount: 8,   // backCount = 2
+      omSeconds: NK_OM_SECONDS.fast,
+      rounds: 1,
+      perOmCue: true,
+      distinctFinalTick: true,
+    }
+    const omMs = NK_OM_SECONDS['fast'] * 1000
+    const { result, unmount } = renderHook(() => useNKEngine(makeClock()))
+
+    act(() => { result.current.start(settings, cbs, vi.fn()) })
+
+    // Whole session: front (8 OMs, #8 held 1.5×) + back (2 OMs, #2 held 1.5×).
+    act(() => {
+      vi.advanceTimersByTime(
+        NK_LEAD_MS_FOR_TIMERS + omMs * 8.5   // front lead-in + 8 OMs + transition
+        + NK_LEAD_MS_FOR_TIMERS + omMs * 2.5 // back lead-in + 2 OMs + transition
+        + 500,
+      )
+    })
+
+    // finalTick on front OM #8 and back OM #2 = 2; tick on the other 7+1 = 8.
+    expect(cbs.finalTick).toHaveBeenCalledTimes(2)
+    expect(cbs.tick).toHaveBeenCalledTimes(8)
+
+    unmount()
+  })
+
+  // NK-09: with distinctFinalTick off, the last OM fires the plain tick — the
+  // gate suppresses finalTick even though perOmCue is on.
+  it('NK-09: distinctFinalTick=false plays the normal tick on the final OM (no finalTick)', () => {
+    const cbs = makeCallbacks()
+    const settings: NaviKriyaSettings = {
+      frontCount: 8,   // backCount = 2
+      omSeconds: NK_OM_SECONDS.fast,
+      rounds: 1,
+      perOmCue: true,
+      distinctFinalTick: false,
+    }
+    const omMs = NK_OM_SECONDS['fast'] * 1000
+    const { result, unmount } = renderHook(() => useNKEngine(makeClock()))
+
+    act(() => { result.current.start(settings, cbs, vi.fn()) })
+
+    act(() => {
+      vi.advanceTimersByTime(
+        NK_LEAD_MS_FOR_TIMERS + omMs * 8.5
+        + NK_LEAD_MS_FOR_TIMERS + omMs * 2.5
+        + 500,
+      )
+    })
+
+    // Every OM (incl. front #8 and back #2) fires the plain tick = 10; finalTick never.
+    expect(cbs.finalTick).not.toHaveBeenCalled()
+    expect(cbs.tick).toHaveBeenCalledTimes(10)
+
+    unmount()
   })
 
   // NK-07: end() resets to idle and fires onComplete with isComplete:false

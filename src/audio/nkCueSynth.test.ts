@@ -5,6 +5,7 @@ import {
   scheduleCountdownTick,
   scheduleNKBackMarker,
   scheduleEndChord,
+  scheduleNKFinalTick,
   scheduleNKFrontMarker,
   scheduleNKTick,
 } from './nkCueSynth'
@@ -21,6 +22,7 @@ describe('nkCueSynth', () => {
     ['scheduleNKFrontMarker', scheduleNKFrontMarker],
     ['scheduleNKBackMarker', scheduleNKBackMarker],
     ['scheduleNKTick', scheduleNKTick],
+    ['scheduleNKFinalTick', scheduleNKFinalTick],
     ['scheduleCountdownTick', scheduleCountdownTick],
     ['scheduleEndChord', scheduleEndChord],
   ]

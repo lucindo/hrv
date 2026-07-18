@@ -96,6 +96,13 @@ export function NaviKriyaSettingsForm({
         checked={settings.perOmCue}
         onChange={(perOmCue) => { updateNkSettings({ perOmCue }) }}
       />
+      <SettingsToggleRow
+        label={nkControlsStrings.distinctFinalTickLabel}
+        ariaLabel={nkControlsStrings.distinctFinalTickLabel}
+        checked={settings.distinctFinalTick}
+        disabled={!settings.perOmCue}
+        onChange={(distinctFinalTick) => { updateNkSettings({ distinctFinalTick }) }}
+      />
       <p
         aria-live="polite"
         className="mt-3 text-center text-sm text-[var(--color-breathing-muted)]"
