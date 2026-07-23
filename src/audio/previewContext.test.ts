@@ -46,7 +46,7 @@ describe('previewContext', () => {
   // global with a wrapper that stores the constructed instance. This avoids the
   // vi.spyOn mock.instances prototype issue with the FakeAudioContext class.
   it('calls ctx.resume() when the singleton AudioContext is suspended on tap', async () => {
-    type PreviewAudioContext = AudioContext & {
+    type PreviewAudioContext = Omit<AudioContext, 'resume'> & {
       _simulateSuspend: () => void
       resume: ReturnType<typeof vi.fn>
     }
