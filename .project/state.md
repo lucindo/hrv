@@ -14,10 +14,14 @@ Optional: dedupe the three copy-paste tick schedulers in `src/audio/nkCueSynth.t
 - Viewport zoom is locked via `user-scalable=no` by operator request — the WCAG 1.4.4 cost was surfaced and accepted.
 - Web release tags are short `vX.Y` matching `package.json.version`'s first two segments; desktop tags are full `desktop-vX.Y.Z`.
 - Patch releases reuse the `vX.Y` slot by force-moving the annotated tag — never cut a new tag for a patch.
-- `package-lock.json`'s root `version` is intentionally stale — let it regenerate on the next dependency change, never hand-edit it.
+- `package-lock.json`'s root `version` is npm-managed — never hand-edit it, let a dependency change regenerate it.
 - The storage boundary coerces non-throwing and self-heals; the domain boundary validates and throws `RangeError`.
+- Dependabot PRs are never merged individually — fold every open bump plus the outstanding OSV fixes into one consolidated branch.
+- Never close a PR — Dependabot closes its own superseded PRs once the bumps land on `main`.
+- `feat/kp-practice` stays local — never push or merge it without an explicit ask.
 
 # hazards
 - `.github/workflows/deploy.yml`: dropping `[skip ci]` from the commit-back or adding a `push: branches` trigger creates a deploy loop.
 - `src/storage/storage.ts`: bumping `STATE_VERSION` runs `migrateEnvelope` over every persisted slice — an additive field needs only a default in its `coerce*`.
 - `src/content/strings.ts`: `ratioLabel` is shared with the Resonant form — Stretch has its own `startRatioLabel`/`targetRatioLabel`.
+- `package.json`: the `filelist` override is what patches brace-expansion — overriding `brace-expansion` itself breaks `minimatch@5`, whose CJS require expects a callable.
