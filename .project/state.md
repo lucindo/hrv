@@ -16,8 +16,7 @@ Optional: dedupe the three copy-paste tick schedulers in `src/audio/nkCueSynth.t
 - Patch releases reuse the `vX.Y` slot by force-moving the annotated tag — never cut a new tag for a patch.
 - `package-lock.json`'s root `version` is npm-managed — never hand-edit it, let a dependency change regenerate it.
 - The storage boundary coerces non-throwing and self-heals; the domain boundary validates and throws `RangeError`.
-- Dependabot PRs are never merged individually — fold every open bump plus the outstanding OSV fixes into one consolidated branch.
-- Never close a PR — Dependabot closes its own superseded PRs once the bumps land on `main`.
+- `.github/dependabot.yml` is removed — no automated version-update PRs; security alerts/updates still run at the repo level; bump flagged deps manually (`npm update`, verify osv-scanner/npm audit) and close any stale PRs by hand.
 - `feat/kp-practice` stays local — never push or merge it without an explicit ask.
 
 # hazards
