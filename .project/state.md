@@ -19,6 +19,7 @@ Optional: dedupe the three copy-paste tick schedulers in `src/audio/nkCueSynth.t
 - `.github/dependabot.yml` is removed — no automated version-update PRs; security alerts/updates still run at the repo level; bump flagged deps manually (`npm update`, verify osv-scanner/npm audit) on a PR branch, never as a direct commit to `main`.
 - Dependabot closes its own superseded security PRs once the fixed versions land on `main` — never close them by hand.
 - `feat/kp-practice` stays local — never push or merge it without an explicit ask.
+- Transitive OSV findings fixable within the parent's range go lock-only via `npm update`, even past the minimum fixed version — never add an `overrides` entry to pin the minimum.
 
 # hazards
 - `.github/workflows/deploy.yml`: dropping `[skip ci]` from the commit-back or adding a `push: branches` trigger creates a deploy loop.
